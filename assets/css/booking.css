@@ -1,0 +1,1399 @@
+/* ============================================
+   BOOKING PAGE STYLES
+   ============================================ */
+
+.booking-page {
+    background: linear-gradient(135deg, #2C3E50 0%, #34495E 100%);
+    min-height: 100vh;
+}
+
+
+/* ============================================
+   BOOKING HEADER
+   ============================================ */
+
+.booking-header {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 1rem 0;
+}
+
+.header-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-left, .header-right {
+    flex: 1;
+}
+
+.header-center {
+    flex: 2;
+    text-align: center;
+}
+
+.back-link {
+    color: #2C3E50;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+}
+
+.back-link:hover {
+    background: rgba(201, 169, 97, 0.1);
+    transform: translateX(-5px);
+}
+
+.back-link:hover {
+    background: linear-gradient(135deg, #C9A961 0%, #8B7355 100%);
+    color: white;
+}
+
+.hotel-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2C3E50;
+}
+
+.hotel-logo i {
+    color: #C9A961;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    justify-content: flex-end;
+    color: #2C3E50;
+    font-weight: 600;
+}
+
+.user-info a:hover {
+    opacity: 0.8;
+}
+
+.user-info i {
+    color: #C9A961;
+}
+
+.logout-btn {
+    color: #dc3545;
+    text-decoration: none;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+    background: #dc3545;
+    color: white;
+}
+
+.auth-links {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+.auth-link {
+    color: #2C3E50;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.auth-link:hover {
+    background: linear-gradient(135deg, #C9A961 0%, #8B7355 100%);
+    color: white;
+}
+
+/* ============================================
+   BOOKING CONTAINER
+   ============================================ */
+
+.booking-container {
+    max-width: 1600px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+    padding: 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    min-height: calc(100vh - 100px);
+}
+
+/* ============================================
+   BOOKING FORM
+   ============================================ */
+
+.booking-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.booking-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.booking-header h1 {
+    color: #2C3E50;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.booking-header h1 i {
+    color: #C9A961;
+    margin-right: 0.5rem;
+}
+
+.booking-header p {
+    color: #666;
+    font-size: 1.1rem;
+}
+
+/* ============================================
+   BOOKING DETAILS
+   ============================================ */
+
+.form-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 15px;
+    border-left: 4px solid #C9A961;
+}
+
+/* Date input container enhancement */
+.form-section:has(input[type="date"]) {
+    background: linear-gradient(135deg, rgba(201, 169, 97, 0.03) 0%, rgba(139, 115, 85, 0.03) 100%);
+    border-left: 4px solid #C9A961;
+    position: relative;
+    overflow: hidden;
+}
+
+.form-section:has(input[type="date"])::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(201, 169, 97, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.form-section h3 {
+    color: #2C3E50;
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-section h3 i {
+    color: #C9A961;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    color: #2C3E50;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: white;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #C9A961;
+    box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.1);
+}
+
+/* ============================================
+   DATE INPUT STYLING
+   ============================================ */
+
+/* Date input wrapper styling */
+.form-group:has(input[type="date"]) {
+    position: relative;
+}
+
+.form-group:has(input[type="date"])::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #C9A961, #D4AF37, #C9A961);
+    transition: width 0.3s ease;
+    border-radius: 2px;
+}
+
+.form-group:has(input[type="date"]:focus)::after {
+    width: 100%;
+}
+
+.form-group input[type="date"],
+.form-group input[type="text"].flatpickr-input {
+    position: relative;
+    padding: 1.2rem 1rem;
+    background: linear-gradient(135deg, rgba(248, 249, 250, 1) 0%, rgba(255, 255, 255, 1) 100%);
+    border: 2px solid #e0e0e0;
+    color: #2C3E50;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.form-group input[type="date"]::-webkit-calendar-picker-indicator {
+    display: none;
+}
+
+.form-group input[type="date"]:hover::-webkit-calendar-picker-indicator {
+    display: none;
+}
+
+.form-group input[type="date"]:hover,
+.form-group input[type="text"].flatpickr-input:hover {
+    border-color: #C9A961;
+    background: white;
+    box-shadow: 0 4px 16px rgba(201, 169, 97, 0.15);
+    transform: translateY(-2px);
+}
+
+.form-group input[type="date"]:focus,
+.form-group input[type="text"].flatpickr-input:focus {
+    border-color: #C9A961;
+    box-shadow: 0 0 0 4px rgba(201, 169, 97, 0.1), 0 8px 20px rgba(201, 169, 97, 0.2);
+    background: white;
+    transform: translateY(-2px);
+    outline: none;
+}
+
+/* Date input icon styling - removed */
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* Placeholder text for empty date inputs */
+.form-group input[type="date"]:invalid {
+    color: #999;
+}
+
+.form-group input[type="date"]:valid,
+.form-group input[type="text"].flatpickr-input.active {
+    color: #2C3E50;
+    font-weight: 700;
+}
+
+/* Firefox date input styling */
+.form-group input[type="date"]::-moz-calendar-picker-indicator {
+    display: none;
+}
+
+/* Add visual indicator for selected dates */
+.form-group input[type="date"]:valid,
+.form-group input[type="text"].flatpickr-input.active {
+    background: linear-gradient(135deg, rgba(201, 169, 97, 0.05) 0%, rgba(212, 175, 55, 0.05) 100%);
+    border-color: #C9A961;
+}
+
+.form-group input[type="date"]:valid:hover,
+.form-group input[type="text"].flatpickr-input.active:hover {
+    border-color: #D4AF37;
+    box-shadow: 0 5px 20px rgba(201, 169, 97, 0.25);
+}
+
+.form-group input[type="date"]:valid:focus,
+.form-group input[type="text"].flatpickr-input.active:focus {
+    border-color: #C9A961;
+    box-shadow: 0 0 0 4px rgba(201, 169, 97, 0.15), 0 8px 25px rgba(201, 169, 97, 0.3);
+}
+
+.form-group input[type="date"]:valid:hover,
+.form-group input[type="text"].flatpickr-input.active:hover {
+    border-color: #218838;
+    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.2);
+}
+
+.form-group input[type="date"]:valid:focus,
+.form-group input[type="text"].flatpickr-input.active:focus {
+    border-color: #28a745;
+    box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.15), 0 8px 20px rgba(40, 167, 69, 0.25);
+}
+
+/* Add checkmark icon for filled dates */
+.form-group:has(input[type="date"]:valid) label::after,
+.form-group:has(input[type="text"].flatpickr-input.active) label::after {
+    content: "\f00c";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    margin-left: 0.5rem;
+    color: #28a745;
+    font-size: 0.9rem;
+    animation: checkmark 0.3s ease-in-out;
+}
+
+@keyframes checkmark {
+    0% {
+        opacity: 0;
+        transform: scale(0);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* ============================================
+   FLATPICKR CUSTOM STYLING
+   ============================================ */
+
+/* Override Flatpickr theme with clean modern design */
+.flatpickr-calendar {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e0e0e0;
+    overflow: hidden;
+    font-family: 'Montserrat', sans-serif;
+    width: 320px;
+}
+
+.flatpickr-months {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.flatpickr-month {
+    color: #2C3E50;
+    height: auto;
+}
+
+.flatpickr-current-month {
+    color: #2C3E50;
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.flatpickr-current-month .flatpickr-monthDropdown-months {
+    background: white;
+    color: #2C3E50;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 0.3rem 0.6rem;
+    font-weight: 600;
+    width: auto;
+    min-width: 110px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.flatpickr-current-month .flatpickr-monthDropdown-months:hover {
+    border-color: #2C3E50;
+    background: #f8f9fa;
+}
+
+.flatpickr-current-month .numInputWrapper {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    width: 70px;
+    transition: all 0.2s ease;
+}
+
+.flatpickr-current-month .numInputWrapper:hover {
+    border-color: #2C3E50;
+    background: #f8f9fa;
+}
+
+.flatpickr-current-month input.cur-year {
+    color: #2C3E50;
+    font-weight: 600;
+    padding: 0.3rem 0.6rem;
+    background: transparent;
+}
+
+.flatpickr-prev-month,
+.flatpickr-next-month {
+    color: #2C3E50;
+    fill: #2C3E50;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.flatpickr-prev-month:hover,
+.flatpickr-next-month:hover {
+    background: #e9ecef;
+}
+
+.flatpickr-prev-month svg,
+.flatpickr-next-month svg {
+    width: 12px;
+    height: 12px;
+}
+
+.flatpickr-weekdays {
+    background: white;
+    padding: 0.75rem 0 0.5rem 0;
+    margin: 0;
+}
+
+.flatpickr-weekday {
+    color: #6c757d;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.flatpickr-days {
+    padding: 0.5rem;
+    background: white;
+}
+
+.dayContainer {
+    min-width: 320px;
+    max-width: 320px;
+}
+
+.flatpickr-day {
+    color: #2C3E50;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    height: 40px;
+    line-height: 40px;
+    margin: 1px;
+    border: 2px solid transparent;
+}
+
+.flatpickr-day:hover {
+    background: #f8f9fa;
+    border-color: #dee2e6;
+    font-weight: 600;
+}
+
+.flatpickr-day.today {
+    border-color: #2C3E50;
+    background: #f8f9fa;
+    font-weight: 700;
+    color: #2C3E50;
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+    background: #2C3E50;
+    border-color: #2C3E50;
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(44, 62, 80, 0.3);
+}
+
+.flatpickr-day.selected:hover,
+.flatpickr-day.startRange:hover,
+.flatpickr-day.endRange:hover {
+    background: #34495E;
+    border-color: #34495E;
+}
+
+.flatpickr-day.inRange {
+    background: rgba(44, 62, 80, 0.1);
+    border-color: transparent;
+    box-shadow: none;
+    color: #2C3E50;
+    font-weight: 500;
+    border-radius: 4px;
+}
+
+.flatpickr-day.disabled,
+.flatpickr-day.disabled:hover {
+    color: #ddd;
+    cursor: not-allowed;
+    background: transparent;
+    font-weight: 400;
+    border-color: transparent;
+}
+
+/* Past dates styling */
+.flatpickr-day.flatpickr-disabled {
+    color: #ccc !important;
+    background: transparent;
+    cursor: not-allowed;
+    font-weight: 400;
+}
+
+.flatpickr-day.prevMonthDay,
+.flatpickr-day.nextMonthDay {
+    display: none !important;
+}
+
+/* Calendar animation */
+.flatpickr-calendar.open {
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Calendar icon removed */
+
+/* ============================================
+   DATE RANGE VISUAL SEPARATOR
+   ============================================ */
+
+.date-inputs-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1rem;
+    align-items: end;
+    margin-bottom: 1rem;
+}
+
+.date-separator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.date-separator > i {
+    color: #C9A961;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    animation: slideRight 1.5s ease-in-out infinite;
+}
+
+@keyframes slideRight {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    50% {
+        transform: translateX(5px);
+    }
+}
+
+.nights-badge {
+    background: linear-gradient(135deg, #C9A961 0%, #8B7355 100%);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 15px rgba(201, 169, 97, 0.3);
+    animation: fadeInScale 0.3s ease-in-out;
+    white-space: nowrap;
+}
+
+@keyframes fadeInScale {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.nights-badge i {
+    font-size: 1rem;
+}
+
+/* Responsive date inputs */
+@media (max-width: 768px) {
+    .date-inputs-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .date-separator {
+        transform: rotate(90deg);
+        padding: 0.5rem 0;
+    }
+    
+    .date-separator > i {
+        margin: 0;
+    }
+    
+    .nights-badge {
+        transform: rotate(-90deg);
+    }
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* ============================================
+   ROOM SELECTION
+   ============================================ */
+
+.room-selection {
+    margin-top: 1rem;
+}
+
+.room-instruction {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 2rem;
+    background: white;
+    border-radius: 10px;
+    border: 2px dashed #ddd;
+}
+
+.room-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.room-card {
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 15px;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.room-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.room-card.selected {
+    border-color: #C9A961;
+    background: linear-gradient(135deg, rgba(201, 169, 97, 0.1) 0%, rgba(139, 115, 85, 0.1) 100%);
+}
+
+.room-card.regular {
+    border-color: #28a745;
+}
+
+.room-card.deluxe {
+    border-color: #fd7e14;
+}
+
+.room-card.vip {
+    border-color: #6f42c1;
+}
+
+.room-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2C3E50;
+    margin-bottom: 0.5rem;
+}
+
+.room-type {
+    color: #666;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+}
+
+.room-name {
+    color: #333;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.room-price {
+    background: linear-gradient(135deg, #C9A961 0%, #8B7355 100%);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+/* ============================================
+   PRICE SUMMARY
+   ============================================ */
+
+.price-summary {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+}
+
+.price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.price-row:last-child {
+    border-bottom: none;
+}
+
+.price-row.total {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #2C3E50;
+    border-top: 2px solid #C9A961;
+    margin-top: 0.5rem;
+    padding-top: 1rem;
+}
+
+/* ============================================
+   FORM ACTIONS
+   ============================================ */
+
+.form-actions {
+    text-align: center;
+    margin-top: 2rem;
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, #C9A961 0%, #8B7355 100%);
+    color: white;
+    border: none;
+    padding: 1.2rem 3rem;
+    border-radius: 50px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 30px rgba(201, 169, 97, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 auto;
+}
+
+.btn-submit:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 40px rgba(201, 169, 97, 0.4);
+}
+
+.btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.form-note {
+    margin-top: 1rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.form-note i {
+    color: #C9A961;
+}
+
+/* ============================================
+   BOOKING ALERTS
+   ============================================ */
+
+.booking-alert {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #C9A961;
+}
+
+.booking-alert.alert-error {
+    border-left-color: #dc3545;
+    background: rgba(248, 215, 218, 0.95);
+}
+
+.booking-alert.alert-success {
+    border-left-color: #28a745;
+    background: rgba(212, 237, 218, 0.95);
+}
+
+.booking-alert i {
+    font-size: 1.2rem;
+    color: #C9A961;
+}
+
+.booking-alert.alert-error i {
+    color: #dc3545;
+}
+
+.booking-alert.alert-success i {
+    color: #28a745;
+}
+
+.booking-alert span {
+    flex: 1;
+    color: #2C3E50;
+    font-weight: 500;
+}
+
+.alert-close {
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.alert-close:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: #2C3E50;
+}
+
+/* ============================================
+   ROOM PREVIEW
+   ============================================ */
+
+.preview-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    height: fit-content;
+    position: sticky;
+    top: 120px;
+}
+
+.preview-card h3 {
+    color: #2C3E50;
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.preview-card h3 i {
+    color: #C9A961;
+}
+
+.room-preview {
+    border-radius: 15px;
+    overflow: hidden;
+    background: #f8f9fa;
+    min-height: 300px;
+}
+
+.preview-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    color: #666;
+}
+
+.preview-placeholder i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #C9A961;
+}
+
+.room-preview-content {
+    padding: 1rem;
+}
+
+.room-preview-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+}
+
+.room-preview-info h4 {
+    color: #2C3E50;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.room-preview-info p {
+    color: #666;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+/* ============================================
+   DETAILED ROOM PREVIEW STYLES
+   ============================================ */
+
+.room-preview-card {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.room-preview-title {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.room-preview-title h3 {
+    color: #2C3E50;
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #C9A961 0%, #8B7355 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.room-preview-desc {
+    color: #2C3E50;
+    font-size: 1rem;
+    line-height: 1.6;
+    margin: 0;
+    font-weight: 500;
+}
+
+.room-preview-amenities,
+.room-preview-inclusions {
+    margin-bottom: 2rem;
+}
+
+.room-preview-amenities h4,
+.room-preview-inclusions h4 {
+    color: #2C3E50;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.room-preview-amenities h4 i,
+.room-preview-inclusions h4 i {
+    color: #C9A961;
+}
+
+.amenities-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+}
+
+.amenity-preview-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border-left: 3px solid #C9A961;
+    transition: all 0.3s ease;
+}
+
+.amenity-preview-item:hover {
+    background: rgba(201, 169, 97, 0.1);
+    transform: translateX(5px);
+}
+
+.amenity-preview-item i {
+    color: #C9A961;
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.amenity-preview-item span {
+    color: #2C3E50;
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.inclusions-preview-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+}
+
+.inclusions-preview-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    color: #2C3E50;
+    font-weight: 500;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.inclusions-preview-list li i {
+    color: #28a745;
+    font-size: 1rem;
+    margin-top: 0.1rem;
+    flex-shrink: 0;
+}
+
+/* ============================================
+   ALERTS
+   ============================================ */
+
+.alert {
+    padding: 1rem;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.alert-error {
+    background: #fee;
+    color: #c33;
+    border: 1px solid #fcc;
+}
+
+.alert-success {
+    background: #efe;
+    color: #363;
+    border: 1px solid #cfc;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 1200px) {
+    .booking-container {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        max-width: 1200px;
+    }
+    
+    .room-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .amenities-preview-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .inclusions-preview-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .header-container {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 0 1rem;
+    }
+    
+    .header-left, .header-right {
+        flex: none;
+    }
+    
+    .booking-container {
+        padding: 1rem;
+    }
+    
+    .booking-card, .preview-card {
+        padding: 1rem;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .room-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .booking-header h1 {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .booking-container {
+        padding: 0.5rem;
+    }
+    
+    .form-section {
+        padding: 1rem;
+    }
+    
+    .btn-submit {
+        padding: 1rem 2rem;
+        font-size: 1rem;
+    }
+}
+
+/* ============================================
+   ROOM PREVIEW IMAGE STYLES
+   ============================================ */
+
+.room-preview-image {
+    margin-bottom: 1.5rem;
+}
+
+.room-preview-image img {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+    border-radius: 15px;
+    border: 2px solid #C9A961;
+    box-shadow: 0 4px 15px rgba(201, 169, 97, 0.3);
+    transition: all 0.3s ease;
+}
+
+.room-preview-image img:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 25px rgba(201, 169, 97, 0.4);
+}
+
+.room-preview-image p {
+    text-align: center;
+    color: #C9A961;
+    font-size: 0.9rem;
+    margin: 0.5rem 0 0 0;
+    font-weight: 500;
+}
+
+/* Default room image placeholder */
+.room-image-placeholder {
+    width: 100%;
+    height: 250px;
+    background: linear-gradient(135deg, rgba(201, 169, 97, 0.1), rgba(139, 115, 85, 0.1));
+    border: 2px dashed #C9A961;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: #C9A961;
+    margin-bottom: 1.5rem;
+}
+
+.room-image-placeholder i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.7;
+}
+
+.room-image-placeholder p {
+    margin: 0;
+    font-size: 1rem;
+    opacity: 0.8;
+}
+
+/* Room preview card enhancements */
+.room-preview-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.room-preview-title h3 {
+    color: #C9A961;
+    margin-bottom: 0.5rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.room-preview-desc {
+    color: #2C3E50;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+    font-size: 1rem;
+    font-weight: 500;
+}
+/* ============================================
+   ROOM GALLERY STYLES
+   ============================================ */
+
+.room-preview-gallery {
+    margin-bottom: 1.5rem;
+}
+
+.gallery-main-image {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.gallery-main-image img {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+    border-radius: 15px;
+    border: 2px solid #C9A961;
+    box-shadow: 0 4px 15px rgba(201, 169, 97, 0.3);
+    transition: all 0.3s ease;
+}
+
+.gallery-thumbnails {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    overflow-x: auto;
+    padding: 0.5rem 0;
+    scrollbar-width: thin;
+    scrollbar-color: #C9A961 rgba(255, 255, 255, 0.1);
+}
+
+.gallery-thumbnails::-webkit-scrollbar {
+    height: 6px;
+}
+
+.gallery-thumbnails::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.gallery-thumbnails::-webkit-scrollbar-thumb {
+    background: #C9A961;
+    border-radius: 3px;
+}
+
+.gallery-thumbnail {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+.gallery-thumbnail:hover {
+    border-color: #C9A961;
+    transform: scale(1.05);
+}
+
+.gallery-thumbnail.active {
+    border-color: #C9A961;
+    box-shadow: 0 2px 8px rgba(201, 169, 97, 0.4);
+}
+
+.room-preview-gallery p {
+    text-align: center;
+    color: #C9A961;
+    font-size: 0.9rem;
+    margin: 0.5rem 0 0 0;
+    font-weight: 500;
+}

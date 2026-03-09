@@ -1,0 +1,243 @@
+<?php
+// Only fetch reservation if not already set (when accessed directly)
+if (!isset($reservation) || !isset($reservationId)) {
+    require_once '../config/database.php';
+    require_once '../config/auth.php';
+
+    // Require login
+    requireLogin();
+
+    // Get reservation ID
+    $reservationId = intval($_GET['reservation_id'] ?? 0);
+
+    if ($reservationId <= 0) {
+        header('Location: ../booking.php?error=Invalid reservation');
+        exit();
+    }
+
+    // Get reservation details
+    try {
+        $conn = getDBConnection();
+        $stmt = $conn->prepare("SELECT * FROM reservations WHERE id = ? AND user_id = ?");
+        $userId = getUserId();
+        $stmt->bind_param("ii", $reservationId, $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result->num_rows === 0) {
+            header('Location: ../booking.php?error=Reservation not found');
+            exit();
+        }
+        
+        $reservation = $result->fetch_assoc();
+        $stmt->close();
+        $conn->close();
+        
+    } catch (Exception $e) {
+        error_log("OTC payment page error: " . $e->getMessage());
+        header('Location: ../booking.php?error=Database error');
+        exit();
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Over the Counter Payment - Paradise Hotel & Resort</title>
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/booking.css">
+    <link rel="stylesheet" href="css/payment.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="booking-page">
+    <!-- Header -->
+    <header class="booking-header">
+        <div class="header-container">
+            <div class="header-left">
+                <a href="payment_method.php?reservation_id=<?php echo $reservationId; ?>" class="back-link">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back</span>
+                </a>
+            </div>
+            <div class="header-center">
+                <div class="hotel-logo">
+                    <i class="fas fa-hotel"></i>
+                    <span>Paradise Hotel & Resort</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <a href="profile.php" class="user-info" style="text-decoration: none; color: #2C3E50;">
+                    <i class="fas fa-user-circle"></i>
+                    <span>Hello, <?php echo htmlspecialchars(getFirstName() ?? getUsername()); ?></span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="payment-container">
+        <div class="payment-form-section">
+            <div class="booking-card">
+                <div class="booking-header">
+                    <h1><i class="fas fa-store"></i> Over the Counter Payment</h1>
+                    <p>Pay at 7-Eleven, SM, or other partner stores</p>
+                </div>
+
+                <!-- Payment Amount -->
+                <div class="payment-amount-compact">
+                    <div class="amount-icon">
+                        <i class="fas fa-receipt"></i>
+                    </div>
+                    <div class="amount-info">
+                        <span class="amount-label">Amount to Pay</span>
+                        <span class="amount-value">₱<?php echo number_format($reservation['payment_amount'], 2); ?></span>
+                    </div>
+                </div>
+
+                <!-- Payment Reference -->
+                <div class="form-section">
+                    <div class="reference-box-large">
+                        <h3><i class="fas fa-barcode"></i> Payment Reference Number</h3>
+                        <div class="reference-number">PAY-OTC-<?php echo date('Ymd') . '-' . str_pad($reservationId, 6, '0', STR_PAD_LEFT); ?></div>
+                        <p>Show this reference number at the payment counter</p>
+                    </div>
+                </div>
+
+                <!-- Partner Stores -->
+                <div class="form-section">
+                    <h3><i class="fas fa-store"></i> Where to Pay</h3>
+                    
+                    <div class="partner-stores">
+                        <div class="store-card">
+                            <div class="store-icon">
+                                <i class="fas fa-store"></i>
+                            </div>
+                            <h4>7-Eleven</h4>
+                            <p>Available at all branches nationwide</p>
+                        </div>
+
+                        <div class="store-card">
+                            <div class="store-icon">
+                                <i class="fas fa-shopping-bag"></i>
+                            </div>
+                            <h4>SM Bills Payment</h4>
+                            <p>Available at SM Department Stores</p>
+                        </div>
+
+                        <div class="store-card">
+                            <div class="store-icon">
+                                <i class="fas fa-cash-register"></i>
+                            </div>
+                            <h4>Bayad Center</h4>
+                            <p>Available at partner locations</p>
+                        </div>
+
+                        <div class="store-card">
+                            <div class="store-icon">
+                                <i class="fas fa-money-check-alt"></i>
+                            </div>
+                            <h4>Cebuana Lhuillier</h4>
+                            <p>Available at all branches</p>
+                        </div>
+
+                        <div class="store-card">
+                            <div class="store-icon">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <h4>M Lhuillier</h4>
+                            <p>Available at all branches</p>
+                        </div>
+
+                        <div class="store-card">
+                            <div class="store-icon">
+                                <i class="fas fa-store-alt"></i>
+                            </div>
+                            <h4>Palawan Pawnshop</h4>
+                            <p>Available at all branches</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Instructions -->
+                <div class="form-section">
+                    <div class="payment-instructions">
+                        <h4><i class="fas fa-info-circle"></i> How to Pay:</h4>
+                        <ol>
+                            <li>Visit any of the partner stores listed above</li>
+                            <li>Go to the bills payment or cashier counter</li>
+                            <li>Tell them you want to pay for "Paradise Hotel & Resort"</li>
+                            <li>Provide the reference number: <strong>PAY-OTC-<?php echo date('Ymd') . '-' . str_pad($reservationId, 6, '0', STR_PAD_LEFT); ?></strong></li>
+                            <li>Pay the exact amount: <strong>₱<?php echo number_format($reservation['payment_amount'], 2); ?></strong></li>
+                            <li>Keep your official receipt</li>
+                            <li>Take a photo of the receipt</li>
+                            <li>Upload proof of payment below</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Upload Proof of Payment -->
+                <form action="process_otc_payment.php" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="reservation_id" value="<?php echo $reservationId; ?>">
+                    
+                    <div class="form-section">
+                        <h3><i class="fas fa-upload"></i> Upload Proof of Payment</h3>
+                        
+                        <div class="form-group">
+                            <label for="proof_of_payment">Official Receipt *</label>
+                            <input type="file" id="proof_of_payment" name="proof_of_payment" 
+                                   accept="image/*" required>
+                            <small style="color: #666;">Upload a clear photo of your official receipt</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="payment_reference">Receipt Number *</label>
+                            <input type="text" id="payment_reference" name="payment_reference" 
+                                   placeholder="Enter receipt number" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="store_name">Store/Branch *</label>
+                            <select id="store_name" name="store_name" required>
+                                <option value="">Select store</option>
+                                <option value="7-Eleven">7-Eleven</option>
+                                <option value="SM Bills Payment">SM Bills Payment</option>
+                                <option value="Bayad Center">Bayad Center</option>
+                                <option value="Cebuana Lhuillier">Cebuana Lhuillier</option>
+                                <option value="M Lhuillier">M Lhuillier</option>
+                                <option value="Palawan Pawnshop">Palawan Pawnshop</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-submit">
+                            <i class="fas fa-check"></i> Submit Payment Proof
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Security Notice -->
+                <div class="security-notice">
+                    <i class="fas fa-shield-alt"></i>
+                    <p>Your payment will be verified within 24 hours. You will receive a confirmation email once verified.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <script src="js/payment.js"></script>`n</body>
+</html>
+
+
+
+
+
+
+
+
+
+
