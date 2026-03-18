@@ -26,7 +26,7 @@ $pavilionPhotos = getPhotosWithFallback('pavilion', 3);
     <nav class="navbar">
         <div class="nav-container">
             <a href="#top" class="nav-logo">
-                <i class="fas fa-hotel"></i>
+                <img src="uploads/logo/logo.png" alt="Paradise Hotel & Resort" class="nav-logo-img" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;">
                 <span>Paradise Hotel & Resort</span>
             </a>
             <button class="nav-toggle" aria-label="Toggle navigation menu">
@@ -41,13 +41,13 @@ $pavilionPhotos = getPhotosWithFallback('pavilion', 3);
                         <i class="fas fa-chevron-down"></i>
                     </a>
                     <div class="dropdown-menu">
-                        <a href="regular-gallery.php" class="dropdown-item">
+                        <a href="room-gallery.php?type=regular" class="dropdown-item">
                             <i class="fas fa-bed"></i> Regular
                         </a>
-                        <a href="deluxe-gallery.php" class="dropdown-item">
+                        <a href="room-gallery.php?type=deluxe" class="dropdown-item">
                             <i class="fas fa-crown"></i> Deluxe
                         </a>
-                        <a href="vip-gallery.php" class="dropdown-item">
+                        <a href="room-gallery.php?type=vip" class="dropdown-item">
                             <i class="fas fa-gem"></i> VIP
                         </a>
                     </div>
@@ -92,6 +92,10 @@ $pavilionPhotos = getPhotosWithFallback('pavilion', 3);
                         </a>
                     </div>
                 </div>
+
+                <a href="#about" class="nav-link">
+                    <i class="fas fa-info-circle"></i> About Us
+                </a>
                 
                 <?php if (isLoggedIn()): ?>
                     <a href="booking.php" class="nav-link book-now">
@@ -102,7 +106,6 @@ $pavilionPhotos = getPhotosWithFallback('pavilion', 3);
                         <i class="fas fa-user-circle"></i>
                         <span>Hello, <?php echo htmlspecialchars(getFirstName() ?? getUsername()); ?></span>
                     </a>
-                    <a href="logout.php" class="nav-link">Logout</a>
                 <?php else: ?>
                     <a href="booking.php" class="nav-link book-now">
                         <i class="fas fa-calendar-check"></i>
@@ -353,19 +356,7 @@ $pavilionPhotos = getPhotosWithFallback('pavilion', 3);
                         Experience luxury and comfort in our world-class resort with premium amenities and exceptional service
                     </p>
                 </div>
-            </div>
-        </section>
 
-        <!-- Contact Us Section -->
-        <section id="contact" class="section">
-            <div class="container">
-                <div class="section-header">
-                    <h2 class="section-title">Contact Us</h2>
-                    <p class="section-subtitle">
-                        Get in touch with us for reservations and inquiries
-                    </p>
-                </div>
-                
                 <!-- Contact Info Cards -->
                 <div class="contact-info">
                     <div class="contact-item">
@@ -384,7 +375,7 @@ $pavilionPhotos = getPhotosWithFallback('pavilion', 3);
                         <p>Calayo, Nasugbu, Batangas, Philippines</p>
                     </div>
                 </div>
-                
+
                 <!-- Google Map -->
                 <div class="map-container" style="margin-top: 3rem;">
                     <iframe 

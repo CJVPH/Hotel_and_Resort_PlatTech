@@ -16,7 +16,10 @@
     <!-- Admin Header -->
     <header class="admin-header">
         <div class="admin-header-left">
-            <h1><i class="fas fa-crown"></i> paradise hotel and resort admin</h1>
+            <h1>
+                <img src="../uploads/logo/logo.png" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:0.5rem;">
+                paradise hotel and resort admin
+            </h1>
         </div>
         <div class="admin-header-right">
             <span class="admin-name"><?php echo htmlspecialchars(getAdminFullName() ?? getAdminUsername()); ?></span>
@@ -36,6 +39,9 @@
                 <a href="reservations.php" class="nav-item <?php echo ($currentPage ?? '') === 'reservations' ? 'active' : ''; ?>">
                     <i class="fas fa-calendar-check"></i> Reservations
                 </a>
+                <a href="calendar.php" class="nav-item <?php echo ($currentPage ?? '') === 'calendar' ? 'active' : ''; ?>">
+                    <i class="fas fa-calendar-alt"></i> Calendar Management
+                </a>
                 <a href="rooms.php" class="nav-item <?php echo ($currentPage ?? '') === 'rooms' ? 'active' : ''; ?>">
                     <i class="fas fa-bed"></i> Rooms & Pricing
                 </a>
@@ -49,7 +55,7 @@
                     <i class="fas fa-utensils"></i> Restaurant Management
                 </a>
                 <a href="pavilion_dashboard.php" class="nav-item <?php echo ($currentPage ?? '') === 'pavilion_dashboard' ? 'active' : ''; ?>">
-                    <i class="fas fa-utensils"></i> Pavilion Menu
+                    <i class="fas fa-archway"></i> Pavilion
                 </a>
                 <a href="water_activities_dashboard.php" class="nav-item <?php echo ($currentPage ?? '') === 'water_activities_dashboard' ? 'active' : ''; ?>">
                     <i class="fas fa-water"></i> Water Activities

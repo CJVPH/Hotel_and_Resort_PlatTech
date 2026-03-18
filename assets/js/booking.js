@@ -1,1041 +1,559 @@
+// @ts-nocheck
 // ============================================
-// BOOKING PAGE JAVASCRIPT
+// BOOKING PAGE JAVASCRIPT — Room Wizard
+// Steps: 1 Guest Info → 2 Room → 3 Dates → 4 Review
 // ============================================
 
-// Global variables
 let roomPrices = {};
-let checkinPicker = null;
-let checkoutPicker = null;
+let rmCalInstance = null;
+let rmSelCheckin  = null; // { dateStr, label }
+let rmSelCheckout = null;
+let currentBookedDates = [];
+let rmCurrentStep = 1;
 
-// Room inventory - 18 total rooms with specific room numbers
 const roomInventory = {
     '2': [
-        // Top row
-        { id: 'regular-101', type: 'Regular', name: 'Regular Room 101', number: '101', available: true },
-        { id: 'deluxe-201', type: 'Deluxe', name: 'Deluxe Room 201', number: '201', available: true },
-        { id: 'vip-301', type: 'VIP', name: 'VIP Suite 301', number: '301', available: true },
-        // Bottom row
-        { id: 'regular-102', type: 'Regular', name: 'Regular Room 102', number: '102', available: true },
-        { id: 'deluxe-202', type: 'Deluxe', name: 'Deluxe Room 202', number: '202', available: true },
-        { id: 'vip-302', type: 'VIP', name: 'VIP Suite 302', number: '302', available: true }
+        { id: 'regular-101', type: 'Regular', name: 'Regular Room 101',            number: '101' },
+        { id: 'deluxe-201',  type: 'Deluxe',  name: 'Deluxe Room 201',             number: '201' },
+        { id: 'vip-301',     type: 'VIP',     name: 'VIP Suite 301',               number: '301' },
+        { id: 'regular-102', type: 'Regular', name: 'Regular Room 102',            number: '102' },
+        { id: 'deluxe-202',  type: 'Deluxe',  name: 'Deluxe Room 202',             number: '202' },
+        { id: 'vip-302',     type: 'VIP',     name: 'VIP Suite 302',               number: '302' }
     ],
     '8': [
-        // Top row
-        { id: 'regular-103', type: 'Regular', name: 'Regular Family Room 103', number: '103', available: true },
-        { id: 'deluxe-203', type: 'Deluxe', name: 'Deluxe Family Suite 203', number: '203', available: true },
-        { id: 'vip-303', type: 'VIP', name: 'VIP Family Suite 303', number: '303', available: true },
-        // Bottom row
-        { id: 'regular-104', type: 'Regular', name: 'Regular Family Room 104', number: '104', available: true },
-        { id: 'deluxe-204', type: 'Deluxe', name: 'Deluxe Family Suite 204', number: '204', available: true },
-        { id: 'vip-304', type: 'VIP', name: 'VIP Family Suite 304', number: '304', available: true }
+        { id: 'regular-103', type: 'Regular', name: 'Regular Family Room 103',     number: '103' },
+        { id: 'deluxe-203',  type: 'Deluxe',  name: 'Deluxe Family Suite 203',     number: '203' },
+        { id: 'vip-303',     type: 'VIP',     name: 'VIP Family Suite 303',        number: '303' },
+        { id: 'regular-104', type: 'Regular', name: 'Regular Family Room 104',     number: '104' },
+        { id: 'deluxe-204',  type: 'Deluxe',  name: 'Deluxe Family Suite 204',     number: '204' },
+        { id: 'vip-304',     type: 'VIP',     name: 'VIP Family Suite 304',        number: '304' }
     ],
     '20': [
-        // Top row
-        { id: 'regular-105', type: 'Regular', name: 'Regular Group Townhouse 105', number: '105', available: true },
-        { id: 'deluxe-205', type: 'Deluxe', name: 'Deluxe Group Townhouse 205', number: '205', available: true },
-        { id: 'vip-305', type: 'VIP', name: 'VIP Group Townhouse 305', number: '305', available: true },
-        // Bottom row
-        { id: 'regular-106', type: 'Regular', name: 'Regular Group Townhouse 106', number: '106', available: true },
-        { id: 'deluxe-206', type: 'Deluxe', name: 'Deluxe Group Townhouse 206', number: '206', available: true },
-        { id: 'vip-306', type: 'VIP', name: 'VIP Group Townhouse 306', number: '306', available: true }
+        { id: 'regular-105', type: 'Regular', name: 'Regular Group Townhouse 105', number: '105' },
+        { id: 'deluxe-205',  type: 'Deluxe',  name: 'Deluxe Group Townhouse 205',  number: '205' },
+        { id: 'vip-305',     type: 'VIP',     name: 'VIP Group Townhouse 305',     number: '305' },
+        { id: 'regular-106', type: 'Regular', name: 'Regular Group Townhouse 106', number: '106' },
+        { id: 'deluxe-206',  type: 'Deluxe',  name: 'Deluxe Group Townhouse 206',  number: '206' },
+        { id: 'vip-306',     type: 'VIP',     name: 'VIP Group Townhouse 306',     number: '306' }
     ]
 };
 
-// Initialize booking page when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Booking page initialized');
+// ============================================
+// INIT
+// ============================================
+function restorePendingBooking() {
+    const pendingData = sessionStorage.getItem('pendingBooking');
+    const savedStep = sessionStorage.getItem('bookingStep');
     
-    // Initialize Flatpickr date pickers first
-    initializeDatePickers();
+    if (pendingData) {
+        try {
+            const data = JSON.parse(pendingData);
+            // Restore form fields
+            if (data.name) document.getElementById('name').value = data.name;
+            if (data.email) document.getElementById('email').value = data.email;
+            if (data.phone) document.getElementById('phone').value = data.phone;
+            if (data.guests) document.getElementById('guests').value = data.guests;
+            if (data.specialRequests) document.getElementById('specialRequests').value = data.specialRequests;
+            
+            // Restore hidden room data
+            if (data.room) document.getElementById('room').value = data.room;
+            if (data.roomData) document.getElementById('roomData').value = data.roomData;
+            if (data.price) document.getElementById('price').value = data.price;
+            if (data.checkin) document.getElementById('checkin').value = data.checkin;
+            if (data.checkout) document.getElementById('checkout').value = data.checkout;
+            if (data.nights) document.getElementById('nights').value = data.nights;
+            
+            // Show toast message
+            rmToast('Welcome back! Your booking details have been restored.');
+            
+            // Go to the saved step (or step 4 if not specified)
+            const step = parseInt(savedStep) || 4;
+            rmGoStep(step);
+            
+            // Clear the saved data
+            sessionStorage.removeItem('pendingBooking');
+            sessionStorage.removeItem('bookingStep');
+            
+            // Refresh room preview if room was selected
+            if (data.guests) {
+                updateRoomPrices(data.guests);
+                if (data.room) displayDetailedRoomPreview(document.querySelector('[data-room-id]')?.dataset.roomType, data.guests);
+            }
+        } catch (e) {
+            console.log('Could not restore pending booking:', e);
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Clear room preview on fresh page load
+    clearRoomPreview();
     
-    // Initialize all booking functionality
-    initializeBookingForm();
-    initializeDateValidation();
-    initializeRoomSelection();
-    initializePriceCalculation();
-    
-    // Fetch room prices from admin system
+    const form = document.getElementById('bookingForm');
+    if (form) form.addEventListener('submit', handleBookingSubmit);
     fetchRoomPrices();
     
-    console.log('All booking systems initialized successfully');
+    // Restore pending booking if user just logged in
+    restorePendingBooking();
+
+    // Resort carousel thumbnail clicks
+    document.querySelectorAll('.resort-thumb').forEach(thumb => {
+        thumb.addEventListener('click', function() {
+            const mainImg = document.getElementById('resortMainImg');
+            if (mainImg) mainImg.src = this.src;
+            document.querySelectorAll('.resort-thumb').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
 });
 
 // ============================================
-// FLATPICKR DATE PICKER INITIALIZATION
+// WIZARD NAVIGATION
 // ============================================
-
-function initializeDatePickers() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    // Initialize check-in date picker
-    checkinPicker = flatpickr("#checkin", {
-        minDate: null, // Allow past dates
-        dateFormat: "Y-m-d",
-        altInput: true,
-        altFormat: "F j, Y",
-        disableMobile: false,
-        onChange: function(selectedDates, dateStr, instance) {
-            // Update checkout minimum date
-            if (checkoutPicker && selectedDates[0]) {
-                const nextDay = new Date(selectedDates[0]);
-                nextDay.setDate(nextDay.getDate() + 1);
-                checkoutPicker.set('minDate', nextDay);
-                
-                // Add active class for styling
-                instance.input.classList.add('active');
-            }
-            validateDates();
-        },
-        onOpen: function(selectedDates, dateStr, instance) {
-            console.log('Check-in calendar opened');
+function rmGoStep(n) {
+    for (let i = 1; i <= 4; i++) {
+        const step = document.getElementById('rmStep' + i);
+        const ws   = document.getElementById('rws' + i);
+        if (step) step.style.display = i === n ? '' : 'none';
+        if (ws) {
+            ws.classList.toggle('active', i === n);
+            ws.classList.toggle('done',   i < n);
         }
+    }
+    rmCurrentStep = n;
+    if (n === 2) {
+        const pax = document.getElementById('guests')?.value;
+        if (pax) generateRoomCards(pax);
+    }
+    if (n === 3) initRmCalendar();
+    if (n === 4) rmPopulateReview();
+}
+
+function rmNext(step) {
+    if (step === 1) {
+        const name  = document.getElementById('name').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const pax   = document.getElementById('guests').value;
+        rmClearErrs(['name','email','phone','guests']);
+        if (!name)  { rmFieldErr('name',  'Please enter your full name.'); return; }
+        if (!email) { rmFieldErr('email', 'Please enter your email address.'); return; }
+        if (!phone) { rmFieldErr('phone', 'Please enter your phone number.'); return; }
+        if (!pax)   { rmFieldErr('guests','Please select the number of guests.'); return; }
+        generateRoomCards(pax);
+        const sub = document.getElementById('rmStep2Sub');
+        if (sub) sub.textContent = `Rooms available for ${document.getElementById('guests').options[document.getElementById('guests').selectedIndex].text}.`;
+    }
+    if (step === 2) {
+        const room = document.getElementById('room').value;
+        if (!room) { rmToast('Please select a room to continue.'); return; }
+    }
+    if (step === 3) {
+        if (!rmSelCheckin || !rmSelCheckout) { rmToast('Please select both check-in and check-out dates.'); return; }
+    }
+    rmGoStep(step + 1);
+}
+
+// ============================================
+// FIELD ERROR HELPERS
+// ============================================
+function rmFieldErr(id, msg) {
+    const el = document.getElementById(id); if (!el) return;
+    const wrap = el.closest('.form-group') || el.parentElement;
+    wrap.classList.add('pv-input-err');
+    let errEl = wrap.querySelector('.pv-field-error');
+    if (!errEl) { errEl = document.createElement('div'); errEl.className = 'pv-field-error'; wrap.appendChild(errEl); }
+    errEl.textContent = msg;
+    el.focus();
+    setTimeout(() => { wrap.classList.remove('pv-input-err'); errEl?.remove(); }, 4000);
+}
+function rmClearErrs(ids) {
+    ids.forEach(id => {
+        const el = document.getElementById(id); if (!el) return;
+        const wrap = el.closest('.form-group') || el.parentElement;
+        wrap.classList.remove('pv-input-err');
+        wrap.querySelector('.pv-field-error')?.remove();
     });
-    
-    // Initialize check-out date picker
-    checkoutPicker = flatpickr("#checkout", {
-        minDate: null, // Allow past dates initially
-        dateFormat: "Y-m-d",
-        altInput: true,
-        altFormat: "F j, Y",
-        disableMobile: false,
-        onChange: function(selectedDates, dateStr, instance) {
-            if (selectedDates[0]) {
-                instance.input.classList.add('active');
-            }
-            validateDates();
-        },
-        onOpen: function(selectedDates, dateStr, instance) {
-            console.log('Check-out calendar opened');
-        }
-    });
-    
-    console.log('Flatpickr date pickers initialized');
+}
+function rmToast(msg) {
+    // reuse pavilion toast if available, else alert
+    if (typeof pvToast === 'function') { pvToast(false, msg); return; }
+    alert(msg);
 }
 
 // ============================================
-// BOOKING FORM INITIALIZATION
+// STEP 2 — ROOM CARDS
 // ============================================
-
-function initializeBookingForm() {
-    const form = document.getElementById('bookingForm');
-    if (form) {
-        form.addEventListener('submit', handleBookingSubmit);
-    }
-    
-    // Initialize guest selection
-    const guestsSelect = document.getElementById('guests');
-    if (guestsSelect) {
-        guestsSelect.addEventListener('change', handleGuestSelection);
-    }
-    
-    // Set minimum date to today
-    const checkinInput = document.getElementById('checkin');
-    const checkoutInput = document.getElementById('checkout');
-    const today = new Date().toISOString().split('T')[0];
-    
-    if (checkinInput) {
-        checkinInput.min = today;
-    }
-    if (checkoutInput) {
-        checkoutInput.min = today;
-    }
-}
-
-// ============================================
-// DATE VALIDATION
-// ============================================
-
-function initializeDateValidation() {
-    const checkinInput = document.getElementById('checkin');
-    const checkoutInput = document.getElementById('checkout');
-    
-    if (checkinInput) {
-        checkinInput.addEventListener('change', validateDates);
-    }
-    
-    if (checkoutInput) {
-        checkoutInput.addEventListener('change', validateDates);
-    }
-}
-
-function validateDates() {
-    const checkinInput = document.getElementById('checkin');
-    const checkoutInput = document.getElementById('checkout');
-    const nightsInput = document.getElementById('nights');
-    const nightsBadge = document.getElementById('nightsBadge');
-    const nightsBadgeCount = document.getElementById('nightsBadgeCount');
-    
-    if (!checkinInput || !checkoutInput || !nightsInput) return false;
-    
-    const checkinDate = new Date(checkinInput.value);
-    const checkoutDate = new Date(checkoutInput.value);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    // Validate check-in date is not in the past
-    if (checkinDate < today) {
-        checkinInput.setCustomValidity('Check-in date cannot be in the past');
-        if (nightsBadge) nightsBadge.style.display = 'none';
-        return false;
-    }
-    
-    // Validate check-out date is after check-in date
-    if (checkoutDate <= checkinDate) {
-        checkoutInput.setCustomValidity('Check-out date must be after check-in date');
-        nightsInput.value = '';
-        if (nightsBadge) nightsBadge.style.display = 'none';
-        return false;
-    }
-    
-    // Calculate number of nights
-    const timeDiff = checkoutDate.getTime() - checkinDate.getTime();
-    const nights = Math.ceil(timeDiff / (1000 * 3600 * 24));
-    
-    // Clear custom validity if dates are valid
-    checkinInput.setCustomValidity('');
-    checkoutInput.setCustomValidity('');
-    
-    // Update nights display
-    nightsInput.value = `${nights} night${nights > 1 ? 's' : ''}`;
-    
-    // Update nights badge
-    if (nightsBadge && nightsBadgeCount) {
-        nightsBadgeCount.textContent = nights;
-        nightsBadge.style.display = 'flex';
-    }
-    
-    // Update price calculation
-    updatePriceCalculation();
-    
-    return true;
-}
-
-// ============================================
-// ROOM SELECTION
-// ============================================
-
-function initializeRoomSelection() {
-    // Room selection will be initialized when guests are selected
-}
-
-function handleGuestSelection() {
-    const guestsSelect = document.getElementById('guests');
-    const guests = guestsSelect.value;
-    
-    if (guests) {
-        generateIndividualRooms(guests);
-    } else {
-        clearRoomSelection();
-    }
-}
-
-function generateIndividualRooms(guests) {
+function generateRoomCards(guests) {
     const roomGrid = document.getElementById('roomSelection');
-    
-    if (!roomGrid) {
-        console.error('Room grid container not found');
+    if (!roomGrid) return;
+    const rooms = roomInventory[guests];
+    if (!rooms || rooms.length === 0) {
+        roomGrid.innerHTML = '<p style="color:#dc3545;text-align:center;padding:2rem;">No rooms available for this guest count.</p>';
         return;
     }
-    
-    const availableRooms = roomInventory[guests];
-    if (!availableRooms || availableRooms.length === 0) {
-        roomGrid.innerHTML = '<p style="color: #dc3545; text-align: center; padding: 2rem;">No rooms available for this guest count.</p>';
-        return;
-    }
-    
-    // Create room grid HTML
-    let roomHTML = '<div class="room-grid">';
-    
-    availableRooms.forEach(room => {
-        const roomClass = room.type.toLowerCase();
-        roomHTML += `
-            <div class="room-card ${roomClass}" data-room-id="${room.id}" data-room-type="${room.type}" data-room-number="${room.number}" onclick="selectRoom('${room.id}', '${room.type}', '${room.number}', '${room.name}')">
-                <div class="room-number">${room.number}</div>
-                <div class="room-type">${room.type}</div>
-                <div class="room-name">${room.name}</div>
-                <div class="room-price" id="price-${room.id}">₱0</div>
-            </div>
-        `;
+
+    const typeIcons  = { Regular: 'fa-bed', Deluxe: 'fa-star', VIP: 'fa-crown' };
+    const typeColors = { Regular: '#28a745', Deluxe: '#fd7e14', VIP: '#6f42c1' };
+    const typeDesc   = {
+        Regular: 'Comfortable & affordable',
+        Deluxe:  'Spacious with premium amenities',
+        VIP:     'Luxury experience with full service'
+    };
+
+    // Get pre-selected type from URL param (passed via hidden input)
+    const preType = (document.getElementById('preselectedRoomType')?.value || '').toLowerCase();
+
+    // Build type filter tabs
+    const types = [...new Set(rooms.map(r => r.type))];
+    let filterHTML = '<div class="rm-type-filter">';
+    filterHTML += `<button class="rm-type-btn ${!preType ? 'active' : ''}" data-type="all">All</button>`;
+    types.forEach(t => {
+        const isActive = preType === t.toLowerCase();
+        filterHTML += `<button class="rm-type-btn ${isActive ? 'active' : ''}" data-type="${t}">${t}</button>`;
     });
-    
-    roomHTML += '</div>';
-    roomGrid.innerHTML = roomHTML;
-    
-    // Update room prices
+    filterHTML += '</div>';
+
+    let html = filterHTML + '<div class="rm-card-grid">';
+    rooms.forEach(room => {
+        const price = getRoomPrice(room.type, guests);
+        const color = typeColors[room.type];
+        const hidden = preType && preType !== room.type.toLowerCase() ? ' style="display:none;"' : '';
+        html += `
+        <div class="rm-room-card" data-room-id="${room.id}" data-room-type="${room.type}" data-room-number="${room.number}"
+             onclick="selectRoom('${room.id}','${room.type}','${room.number}','${room.name}')"${hidden}>
+            <div class="rm-card-number">${room.number}</div>
+            <div class="rm-card-name">${room.type}</div>
+            <div class="rm-card-desc">${room.name}</div>
+            <div class="rm-card-price" id="price-${room.id}">₱${price.toLocaleString()}</div>
+        </div>`;
+    });
+    html += '</div>';
+    roomGrid.innerHTML = html;
     updateRoomPrices(guests);
+
+    // Wire up filter buttons
+    roomGrid.querySelectorAll('.rm-type-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            roomGrid.querySelectorAll('.rm-type-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            const filter = this.dataset.type;
+            roomGrid.querySelectorAll('.rm-room-card').forEach(card => {
+                card.style.display = (filter === 'all' || card.dataset.roomType === filter) ? '' : 'none';
+            });
+        });
+    });
 }
 
 function selectRoom(roomId, roomType, roomNumber, roomName) {
-    console.log('selectRoom called with:', roomId, roomType, roomNumber, roomName);
-    
-    // Remove selection from all rooms
-    document.querySelectorAll('.room-card').forEach(card => {
-        card.classList.remove('selected');
+    document.querySelectorAll('.rm-room-card').forEach(c => c.classList.remove('rm-selected'));
+    const card = document.querySelector(`[data-room-id="${roomId}"]`);
+    if (card) card.classList.add('rm-selected');
+
+    document.getElementById('room').value     = `${roomType} - ${roomName}`;
+    document.getElementById('roomData').value = JSON.stringify({
+        individual_room: { room_id: roomId, room_type: roomType, room_number: roomNumber, room_name: roomName }
     });
-    
-    // Add selection to clicked room
-    const selectedCard = document.querySelector(`[data-room-id="${roomId}"]`);
-    if (selectedCard) {
-        selectedCard.classList.add('selected');
-    }
-    
-    // Update hidden form fields
-    const roomInput = document.getElementById('room');
-    const roomDataInput = document.getElementById('roomData');
-    
-    if (roomInput) {
-        roomInput.value = `${roomType} - ${roomName}`;
-    }
-    
-    if (roomDataInput) {
-        const roomData = {
-            individual_room: {
-                room_id: roomId,
-                room_type: roomType,
-                room_number: roomNumber,
-                room_name: roomName
+
+    const guests = document.getElementById('guests')?.value || '0';
+    if (guests) displayDetailedRoomPreview(roomType, guests);
+
+    // Reset calendar when room changes
+    if (rmCalInstance) { rmCalInstance.destroy(); rmCalInstance = null; }
+    rmSelCheckin = null; rmSelCheckout = null;
+    updateRmStaySummary();
+
+    // Update date step label
+    const lbl = document.getElementById('rmDateRoomLabel');
+    if (lbl) lbl.textContent = `Selecting dates for: ${roomName}`;
+
+    // Pre-fetch booked dates in background (no auto-advance)
+    fetch(`api/get_room_availability.php?room_number=${roomNumber}&room_type=${roomType}&pax_group=${guests}`)
+        .then(r => r.json())
+        .then(data => { currentBookedDates = (data.success && data.booked_dates) ? data.booked_dates : []; })
+        .catch(() => { currentBookedDates = []; });
+}
+
+// ============================================
+// STEP 3 — INLINE RANGE CALENDAR
+// ============================================
+function initRmCalendar() {
+    if (rmCalInstance) return;
+    const today = new Date(); today.setHours(0,0,0,0);
+    const disabledDates = currentBookedDates.map(r => ({ from: r.from, to: r.to }));
+
+    rmCalInstance = flatpickr('#rmCalendar', {
+        inline: true,
+        mode: 'range',
+        minDate: 'today',
+        dateFormat: 'Y-m-d',
+        disable: disabledDates,
+        onDayCreate: function(dObj, dStr, fp, dayElem) {
+            const d = dayElem.dateObj; if (!d) return;
+            const ymd = d.toISOString().slice(0,10);
+            if (d < today || dayElem.classList.contains('flatpickr-disabled')) {
+                dayElem.classList.add(d >= today ? 'pv-booked' : 'pv-past');
+            } else {
+                dayElem.classList.add('pv-avail');
             }
-        };
-        roomDataInput.value = JSON.stringify(roomData);
-    }
-    
-    // Get current pax count
-    const guestsSelect = document.getElementById('guests');
-    const paxCount = guestsSelect ? guestsSelect.value : null;
-    
-    // Display detailed room preview with amenities based on pax count
-    console.log('About to call displayDetailedRoomPreview with:', roomType, 'and pax:', paxCount);
-    if (paxCount) {
-        displayDetailedRoomPreview(roomType, paxCount);
+        },
+        onMonthChange: function(sel, str, fp) {
+            fp.calendarContainer?.querySelectorAll('.flatpickr-day').forEach(dayElem => {
+                if (!dayElem.dateObj) return;
+                const d = dayElem.dateObj;
+                dayElem.classList.remove('pv-past','pv-avail','pv-booked');
+                if (d < today) dayElem.classList.add('pv-past');
+                else if (dayElem.classList.contains('flatpickr-disabled')) dayElem.classList.add('pv-booked');
+                else dayElem.classList.add('pv-avail');
+            });
+        },
+        onChange: function(selectedDates) {
+            if (selectedDates.length >= 1) {
+                const d = selectedDates[0];
+                rmSelCheckin = { dateStr: d.toISOString().slice(0,10), label: d.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'}) };
+                rmSelCheckout = null;
+            }
+            if (selectedDates.length === 2) {
+                const d = selectedDates[1];
+                rmSelCheckout = { dateStr: d.toISOString().slice(0,10), label: d.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'}) };
+            }
+            updateRmStaySummary();
+        }
+    });
+}
+
+function updateRmStaySummary() {
+    const ciEl  = document.getElementById('rmSelCheckin');
+    const coEl  = document.getElementById('rmSelCheckout');
+    const badge = document.getElementById('rmNightsBadge');
+    const nEl   = document.getElementById('rmNightsCount');
+
+    if (ciEl)  ciEl.textContent  = 'Check-in: '  + (rmSelCheckin?.label  || '—');
+    if (coEl)  coEl.textContent  = 'Check-out: ' + (rmSelCheckout?.label || '—');
+
+    if (rmSelCheckin && rmSelCheckout) {
+        const nights = Math.round((new Date(rmSelCheckout.dateStr) - new Date(rmSelCheckin.dateStr)) / 86400000);
+        if (nEl) nEl.textContent = nights;
+        if (badge) { badge.style.display = 'inline-flex'; }
+
+        // Update hidden fields
+        document.getElementById('checkin').value  = rmSelCheckin.dateStr;
+        document.getElementById('checkout').value = rmSelCheckout.dateStr;
+        document.getElementById('nights').value   = nights + ' night' + (nights !== 1 ? 's' : '');
+
+        // Price
+        const selectedCard = document.querySelector('.rm-room-card.rm-selected');
+        const guests = document.getElementById('guests')?.value;
+        if (selectedCard && guests) {
+            const rate  = getRoomPrice(selectedCard.dataset.roomType, guests);
+            const total = rate * nights;
+            document.getElementById('roomRate').textContent    = '₱' + rate.toLocaleString();
+            document.getElementById('nightsCount').textContent = nights;
+            document.getElementById('totalAmount').textContent = '₱' + total.toLocaleString();
+            document.getElementById('price').value             = total;
+        }
     } else {
-        console.warn('No pax count selected, cannot show room preview');
+        if (badge) badge.style.display = 'none';
     }
-    
-    // Update price calculation
-    updatePriceCalculation();
-}
-
-function clearRoomSelection() {
-    const roomGrid = document.getElementById('roomSelection');
-    if (roomGrid) {
-        roomGrid.innerHTML = '<p class="room-instruction">Please select number of guests first to see available rooms.</p>';
-    }
-    
-    // Clear form fields
-    const roomInput = document.getElementById('room');
-    const roomDataInput = document.getElementById('roomData');
-    
-    if (roomInput) roomInput.value = '';
-    if (roomDataInput) roomDataInput.value = '';
-    
-    // Clear price calculation
-    updatePriceCalculation();
 }
 
 // ============================================
-// PRICE CALCULATION
+// STEP 4 — REVIEW
 // ============================================
+function rmPopulateReview() {
+    const name    = document.getElementById('name').value.trim();
+    const email   = document.getElementById('email').value.trim();
+    const phone   = document.getElementById('phone').value.trim();
+    const guests  = document.getElementById('guests');
+    const gLabel  = guests?.options[guests.selectedIndex]?.text || '';
+    const roomVal = document.getElementById('room').value;
+    const nights  = document.getElementById('nights').value;
+    const rate    = document.getElementById('roomRate').textContent;
+    const total   = document.getElementById('totalAmount').textContent;
+    const nCount  = document.getElementById('nightsCount').textContent;
 
-function initializePriceCalculation() {
-    // Price calculation will be triggered by date and room selection changes
+    document.getElementById('rvRmName').textContent    = name;
+    document.getElementById('rvRmContact').textContent = email + (phone ? ' · ' + phone : '');
+    document.getElementById('rvRmRoom').textContent    = roomVal || '—';
+    document.getElementById('rvRmGuests').textContent  = gLabel;
+    document.getElementById('rvRmDates').textContent   = (rmSelCheckin?.label || '—') + ' → ' + (rmSelCheckout?.label || '—');
+    document.getElementById('rvRmNights').textContent  = nights || '—';
+    document.getElementById('rvRmRate').textContent    = rate;
+    document.getElementById('rvRmNightCount').textContent = nCount;
+    document.getElementById('rvRmTotal').textContent   = total;
 }
 
+// ============================================
+// PRICES
+// ============================================
 function fetchRoomPrices() {
     fetch('api/get_room_prices.php')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                roomPrices = data.prices;
-                console.log('Room prices loaded:', roomPrices);
-            } else {
-                console.error('Failed to fetch room prices');
-                // Use default prices
-                roomPrices = {
-                    'Regular': { 2: 1500, 8: 3000, 20: 6000 },
-                    'Deluxe': { 2: 2500, 8: 4500, 20: 8500 },
-                    'VIP': { 2: 4000, 8: 7000, 20: 12000 }
-                };
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching room prices:', error);
-            // Use default prices
-            roomPrices = {
-                'Regular': { 2: 1500, 8: 3000, 20: 6000 },
-                'Deluxe': { 2: 2500, 8: 4500, 20: 8500 },
-                'VIP': { 2: 4000, 8: 7000, 20: 12000 }
-            };
-        });
+        .then(r => r.json())
+        .then(data => { if (data.success) roomPrices = data.prices; })
+        .catch(() => {});
+}
+
+function getRoomPrice(roomType, guests) {
+    if (roomPrices[roomType]?.[guests]) return roomPrices[roomType][guests];
+    const defaults = {
+        'Regular': { '2': 1500,  '8': 3000,  '20': 6000  },
+        'Deluxe':  { '2': 2500,  '8': 4500,  '20': 8500  },
+        'VIP':     { '2': 4000,  '8': 7000,  '20': 12000 }
+    };
+    return defaults[roomType]?.[guests] || 0;
 }
 
 function updateRoomPrices(guests) {
-    const roomCards = document.querySelectorAll('.room-card');
-    
-    roomCards.forEach(card => {
-        const roomType = card.dataset.roomType;
-        const roomId = card.dataset.roomId;
-        const priceElement = document.getElementById(`price-${roomId}`);
-        
-        if (roomPrices[roomType] && roomPrices[roomType][guests] && priceElement) {
-            const price = roomPrices[roomType][guests];
-            priceElement.textContent = `₱${price.toLocaleString()}`;
+    document.querySelectorAll('.rm-room-card').forEach(card => {
+        const el = document.getElementById(`price-${card.dataset.roomId}`);
+        if (el) {
+            const price = getRoomPrice(card.dataset.roomType, guests);
+            el.innerHTML = `₱${price.toLocaleString()}`;
         }
     });
 }
 
-function updatePriceCalculation() {
-    const selectedRoom = document.querySelector('.room-card.selected');
-    const nightsInput = document.getElementById('nights');
-    const guestsSelect = document.getElementById('guests');
-    
-    const roomRateElement = document.getElementById('roomRate');
-    const nightsCountElement = document.getElementById('nightsCount');
-    const totalAmountElement = document.getElementById('totalAmount');
-    const priceInput = document.getElementById('price');
-    
-    if (!selectedRoom || !nightsInput.value || !guestsSelect.value) {
-        // Reset price display
-        if (roomRateElement) roomRateElement.textContent = '₱0';
-        if (nightsCountElement) nightsCountElement.textContent = '0';
-        if (totalAmountElement) totalAmountElement.textContent = '₱0';
-        if (priceInput) priceInput.value = '0';
-        return;
-    }
-    
-    const roomType = selectedRoom.dataset.roomType;
-    const guests = guestsSelect.value;
-    const nightsText = nightsInput.value;
-    const nights = parseInt(nightsText.match(/\d+/)[0]);
-    
-    if (roomPrices[roomType] && roomPrices[roomType][guests]) {
-        const roomRate = roomPrices[roomType][guests];
-        const totalAmount = roomRate * nights;
-        
-        // Update display
-        if (roomRateElement) roomRateElement.textContent = `₱${roomRate.toLocaleString()}`;
-        if (nightsCountElement) nightsCountElement.textContent = nights;
-        if (totalAmountElement) totalAmountElement.textContent = `₱${totalAmount.toLocaleString()}`;
-        if (priceInput) priceInput.value = totalAmount;
-    }
+// ============================================
+// ROOM PREVIEW (right panel)
+// ============================================
+function clearRoomPreview() {
+    const carousel = document.getElementById('resortCarousel');
+    const detail   = document.getElementById('roomDetail');
+    if (carousel) carousel.style.display = '';
+    if (detail)   { detail.style.display = 'none'; detail.innerHTML = ''; }
 }
 
-// ============================================
-// ROOM PREVIEW
-// ============================================
-
-// ============================================
-// ROOM PREVIEW (Legacy - replaced by displayDetailedRoomPreview)
-// ============================================
-
-/*
-function updateRoomPreview(roomType, roomNumber, roomName) {
-    const previewContainer = document.getElementById('roomPreview');
-    if (!previewContainer) return;
-    
-    const roomTypeClass = roomType.toLowerCase();
-    const previewHTML = `
-        <div class="room-preview-content">
-            <div class="room-preview-info">
-                <h4>${roomName}</h4>
-                <p><strong>Room Number:</strong> ${roomNumber}</p>
-                <p><strong>Room Type:</strong> ${roomType}</p>
-                <p><strong>Features:</strong> ${getRoomFeatures(roomType)}</p>
-            </div>
-        </div>
-    `;
-    
-    previewContainer.innerHTML = previewHTML;
-}
-*/
-
-// ============================================
-// DETAILED ROOM INFORMATION
-// ============================================
-
-// Room details data with amenities and inclusions - Realistic Philippine Hotel Setting
 const roomDetails = {
     Regular: {
-        2: {
-            title: "Regular Room - 2 Guests",
-            description: "Clean and comfortable accommodation with essential amenities. Perfect for couples looking for good value and basic comfort.",
-            amenities: [
-                { icon: "fa-bed", text: "Queen Size Bed with Clean Linens" },
-                { icon: "fa-tv", text: "32-inch LED TV with Local Channels" },
-                { icon: "fa-wifi", text: "Free WiFi Internet" },
-                { icon: "fa-snowflake", text: "Air Conditioning" },
-                { icon: "fa-shower", text: "Private Bathroom with Hot Shower" },
-                { icon: "fa-coffee", text: "Complimentary Coffee & Tea" },
-                { icon: "fa-phone", text: "Telephone" },
-                { icon: "fa-towel", text: "Fresh Towels Daily" }
-            ],
-            inclusions: [
-                "Welcome drink",
-                "Daily housekeeping",
-                "Basic toiletries (soap, shampoo)",
-                "Free parking",
-                "24/7 front desk",
-                "Swimming pool access"
-            ]
-        },
-        8: {
-            title: "Regular Family Room - 4-8 Guests",
-            description: "Budget-friendly family accommodation with double deck beds. Great for families or small groups who want to save on accommodation costs.",
-            amenities: [
-                { icon: "fa-bed", text: "1 Queen Bed + 3 Double Deck Beds" },
-                { icon: "fa-tv", text: "32-inch LED TV with Local Channels" },
-                { icon: "fa-wifi", text: "Free WiFi Internet" },
-                { icon: "fa-snowflake", text: "2 Air Conditioning Units" },
-                { icon: "fa-shower", text: "Shared Bathroom with Hot Shower" },
-                { icon: "fa-coffee", text: "Coffee & Tea Station" },
-                { icon: "fa-phone", text: "Telephone" },
-                { icon: "fa-utensils", text: "Small Refrigerator" }
-            ],
-            inclusions: [
-                "Welcome drinks for group",
-                "Daily housekeeping",
-                "Basic toiletries",
-                "Free parking",
-                "24/7 front desk",
-                "Swimming pool access",
-                "Extra towels and pillows"
-            ]
-        },
-        20: {
-            title: "Regular Group Townhouse - 10-20 Guests",
-            description: "Two-story townhouse with spacious living areas. Perfect for large groups, family reunions, or budget-conscious organizations.",
-            amenities: [
-                { icon: "fa-home", text: "2-Story Townhouse Layout" },
-                { icon: "fa-couch", text: "Spacious Living Room (Ground Floor)" },
-                { icon: "fa-utensils", text: "Full Kitchen & Dining Area (Ground Floor)" },
-                { icon: "fa-bed", text: "4 Bedrooms with Double Deck Beds (2nd Floor)" },
-                { icon: "fa-bed", text: "1 Master Bedroom with Queen Bed (2nd Floor)" },
-                { icon: "fa-tv", text: "2 LED TVs (Living Room & Master Bedroom)" },
-                { icon: "fa-wifi", text: "Free WiFi Internet" },
-                { icon: "fa-snowflake", text: "4 Air Conditioning Units" },
-                { icon: "fa-shower", text: "3 Shared Bathrooms (1 Ground, 2 Upper)" },
-                { icon: "fa-car", text: "Group Parking Area" }
-            ],
-            inclusions: [
-                "Welcome group snacks",
-                "Daily housekeeping",
-                "Basic toiletries",
-                "Free group parking",
-                "24/7 front desk",
-                "Swimming pool access",
-                "Kitchen utensils & cookware",
-                "Extra bedding available"
-            ]
-        }
+        2:  { title:"Regular Room - 2 Guests", description:"Clean and comfortable accommodation with essential amenities. Perfect for couples looking for good value.", amenities:[{icon:"fa-bed",text:"Queen Size Bed"},{icon:"fa-tv",text:"32-inch LED TV"},{icon:"fa-wifi",text:"Free WiFi"},{icon:"fa-snowflake",text:"Air Conditioning"},{icon:"fa-shower",text:"Private Bathroom with Hot Shower"},{icon:"fa-coffee",text:"Complimentary Coffee & Tea"}], inclusions:["Welcome drink","Daily housekeeping","Basic toiletries","Free parking","Pool access"] },
+        8:  { title:"Regular Family Room - 4-8 Guests", description:"Budget-friendly family accommodation with double deck beds.", amenities:[{icon:"fa-bed",text:"1 Queen Bed + 3 Double Deck Beds"},{icon:"fa-tv",text:"32-inch LED TV"},{icon:"fa-wifi",text:"Free WiFi"},{icon:"fa-snowflake",text:"2 Air Conditioning Units"},{icon:"fa-shower",text:"Shared Bathroom with Hot Shower"},{icon:"fa-coffee",text:"Coffee & Tea Station"}], inclusions:["Welcome drinks","Daily housekeeping","Basic toiletries","Free parking","Pool access"] },
+        20: { title:"Regular Group Townhouse - 10-20 Guests", description:"Two-story townhouse for large groups or family reunions.", amenities:[{icon:"fa-home",text:"2-Story Townhouse"},{icon:"fa-utensils",text:"Full Kitchen & Dining Area"},{icon:"fa-bed",text:"5 Bedrooms with Double Deck Beds"},{icon:"fa-wifi",text:"Free WiFi"},{icon:"fa-snowflake",text:"4 Air Conditioning Units"},{icon:"fa-shower",text:"3 Shared Bathrooms"}], inclusions:["Welcome snacks","Daily housekeeping","Basic toiletries","Group parking","Pool access","Kitchen utensils"] }
     },
     Deluxe: {
-        2: {
-            title: "Deluxe Room - 2 Guests",
-            description: "Comfortable room with better amenities and nicer furnishings. Good choice for couples who want more comfort and space.",
-            amenities: [
-                { icon: "fa-bed", text: "King Size Bed with Quality Linens" },
-                { icon: "fa-tv", text: "40-inch Smart TV with Cable" },
-                { icon: "fa-wifi", text: "High-Speed WiFi" },
-                { icon: "fa-snowflake", text: "Inverter Air Conditioning" },
-                { icon: "fa-bath", text: "Private Bathroom with Bathtub" },
-                { icon: "fa-coffee", text: "Coffee & Tea Making Facilities" },
-                { icon: "fa-couch", text: "Small Sitting Area" },
-                { icon: "fa-utensils", text: "Mini Refrigerator" },
-                { icon: "fa-mountain", text: "Balcony with Garden View" },
-                { icon: "fa-phone", text: "Direct Dial Telephone" }
-            ],
-            inclusions: [
-                "Welcome drink & snacks",
-                "Daily housekeeping",
-                "Quality toiletries",
-                "Free parking",
-                "24/7 front desk",
-                "Pool & gym access",
-                "Complimentary breakfast",
-                "Room service available"
-            ]
-        },
-        8: {
-            title: "Deluxe Family Suite - 4-8 Guests",
-            description: "Spacious family suite with separate sleeping areas. Comfortable accommodation for families who want more privacy and space.",
-            amenities: [
-                { icon: "fa-bed", text: "2 Queen Beds + 2 Single Beds" },
-                { icon: "fa-tv", text: "2 Smart TVs with Cable" },
-                { icon: "fa-wifi", text: "High-Speed WiFi" },
-                { icon: "fa-snowflake", text: "3 Air Conditioning Units" },
-                { icon: "fa-bath", text: "2 Private Bathrooms" },
-                { icon: "fa-coffee", text: "Coffee & Tea Station" },
-                { icon: "fa-couch", text: "Living Room Area" },
-                { icon: "fa-utensils", text: "Large Refrigerator" },
-                { icon: "fa-mountain", text: "Large Balcony" },
-                { icon: "fa-gamepad", text: "Entertainment Area" }
-            ],
-            inclusions: [
-                "Family welcome package",
-                "Daily housekeeping",
-                "Quality toiletries for all",
-                "Free parking",
-                "24/7 front desk",
-                "Pool & gym access",
-                "Family breakfast included",
-                "Room service available",
-                "Kids activities access"
-            ]
-        },
-        20: {
-            title: "Deluxe Group Townhouse - 10-20 Guests",
-            description: "Premium two-story townhouse with upgraded amenities. Great for corporate groups, family reunions, or special events.",
-            amenities: [
-                { icon: "fa-home", text: "2-Story Premium Townhouse" },
-                { icon: "fa-couch", text: "Large Living & Dining Areas (Ground Floor)" },
-                { icon: "fa-utensils", text: "Full Kitchen with Premium Appliances" },
-                { icon: "fa-bed", text: "4 Bedrooms with Quality Beds (2nd Floor)" },
-                { icon: "fa-bed", text: "1 Master Suite with King Bed (2nd Floor)" },
-                { icon: "fa-tv", text: "Multiple Smart TVs Throughout" },
-                { icon: "fa-wifi", text: "High-Speed WiFi Network" },
-                { icon: "fa-snowflake", text: "Central Air Conditioning" },
-                { icon: "fa-bath", text: "4 Private Bathrooms (2 per floor)" },
-                { icon: "fa-mountain", text: "Private Terrace" },
-                { icon: "fa-users", text: "Function Room for Events" },
-                { icon: "fa-car", text: "Private Parking Area" }
-            ],
-            inclusions: [
-                "Group welcome reception",
-                "Daily housekeeping team",
-                "Quality toiletries & amenities",
-                "Free group parking",
-                "Front desk assistance",
-                "Resort facilities access",
-                "Group breakfast service",
-                "Event planning assistance",
-                "Sound system for events",
-                "Kitchen utensils & cookware"
-            ]
-        }
+        2:  { title:"Deluxe Room - 2 Guests", description:"Comfortable room with better amenities and nicer furnishings.", amenities:[{icon:"fa-bed",text:"King Size Bed"},{icon:"fa-tv",text:"40-inch Smart TV"},{icon:"fa-wifi",text:"High-Speed WiFi"},{icon:"fa-snowflake",text:"Inverter Air Conditioning"},{icon:"fa-bath",text:"Private Bathroom with Bathtub"},{icon:"fa-mountain",text:"Balcony with Garden View"}], inclusions:["Welcome drink & snacks","Daily housekeeping","Quality toiletries","Free parking","Pool & gym access","Complimentary breakfast"] },
+        8:  { title:"Deluxe Family Suite - 4-8 Guests", description:"Spacious family suite with separate sleeping areas.", amenities:[{icon:"fa-bed",text:"2 Queen Beds + 2 Single Beds"},{icon:"fa-tv",text:"2 Smart TVs"},{icon:"fa-wifi",text:"High-Speed WiFi"},{icon:"fa-snowflake",text:"3 Air Conditioning Units"},{icon:"fa-bath",text:"2 Private Bathrooms"},{icon:"fa-mountain",text:"Large Balcony"}], inclusions:["Family welcome package","Daily housekeeping","Quality toiletries","Free parking","Pool & gym access","Family breakfast"] },
+        20: { title:"Deluxe Group Townhouse - 10-20 Guests", description:"Premium two-story townhouse with upgraded amenities.", amenities:[{icon:"fa-home",text:"2-Story Premium Townhouse"},{icon:"fa-utensils",text:"Full Kitchen with Premium Appliances"},{icon:"fa-bed",text:"5 Premium Bedrooms"},{icon:"fa-wifi",text:"High-Speed WiFi"},{icon:"fa-bath",text:"4 Private Bathrooms"},{icon:"fa-mountain",text:"Private Terrace"}], inclusions:["Group welcome reception","Daily housekeeping","Quality toiletries","Free parking","Resort facilities","Group breakfast"] }
     },
     VIP: {
-        2: {
-            title: "VIP Suite - 2 Guests",
-            description: "Premium suite with upgraded amenities and better service. Perfect for special occasions or guests who want enhanced comfort.",
-            amenities: [
-                { icon: "fa-bed", text: "King Size Premium Bed with Quality Linens" },
-                { icon: "fa-tv", text: "50-inch Smart TV with Premium Channels" },
-                { icon: "fa-wifi", text: "Premium High-Speed WiFi" },
-                { icon: "fa-snowflake", text: "Dual Air Conditioning" },
-                { icon: "fa-bath", text: "Luxury Bathroom with Jacuzzi Tub" },
-                { icon: "fa-coffee", text: "Premium Coffee Machine" },
-                { icon: "fa-couch", text: "Separate Living Room" },
-                { icon: "fa-utensils", text: "Mini Bar & Wine Fridge" },
-                { icon: "fa-mountain", text: "Private Balcony with Ocean View" },
-                { icon: "fa-spa", text: "In-Room Massage Chair" },
-                { icon: "fa-headphones", text: "Sound System" },
-                { icon: "fa-concierge-bell", text: "Priority Service" }
-            ],
-            inclusions: [
-                "VIP welcome with wine",
-                "Priority check-in/out",
-                "Twice-daily housekeeping",
-                "Premium toiletries & bathrobes",
-                "Airport transfer service",
-                "Personal concierge",
-                "VIP lounge access",
-                "Spa treatment discount",
-                "In-room breakfast service",
-                "Priority restaurant reservations",
-                "Laundry service"
-            ]
-        },
-        8: {
-            title: "VIP Family Suite - 4-8 Guests",
-            description: "Premium family accommodation with enhanced amenities and personalized service. Great for families who want upgraded comfort.",
-            amenities: [
-                { icon: "fa-bed", text: "4 King Size Premium Beds" },
-                { icon: "fa-tv", text: "Premium Entertainment Systems" },
-                { icon: "fa-wifi", text: "High-Speed WiFi Network" },
-                { icon: "fa-snowflake", text: "Smart Climate Control" },
-                { icon: "fa-bath", text: "4 Premium Bathrooms" },
-                { icon: "fa-coffee", text: "Coffee Bar & Kitchen" },
-                { icon: "fa-couch", text: "Multiple Living Areas" },
-                { icon: "fa-utensils", text: "Premium Bar & Wine Selection" },
-                { icon: "fa-mountain", text: "Private Terrace with Pool View" },
-                { icon: "fa-spa", text: "Family Spa Area" },
-                { icon: "fa-car", text: "Valet Parking" },
-                { icon: "fa-gamepad", text: "Entertainment Room" },
-                { icon: "fa-baby", text: "Kids Amenities" },
-                { icon: "fa-concierge-bell", text: "Family Concierge" }
-            ],
-            inclusions: [
-                "Family welcome package",
-                "Dedicated concierge",
-                "Enhanced housekeeping",
-                "Premium amenities for all",
-                "Transportation service",
-                "Personal family assistant",
-                "Priority facilities access",
-                "Spa services discount",
-                "Private dining available",
-                "Family activities planning",
-                "Childcare service available",
-                "Shopping assistance"
-            ]
-        },
-        20: {
-            title: "VIP Group Townhouse - 10-20 Guests",
-            description: "Luxury two-story townhouse with premium amenities and dedicated service. Perfect for executive groups or special celebrations.",
-            amenities: [
-                { icon: "fa-home", text: "2-Story Luxury Townhouse" },
-                { icon: "fa-couch", text: "Premium Living & Entertainment Areas" },
-                { icon: "fa-utensils", text: "Gourmet Kitchen with Premium Appliances" },
-                { icon: "fa-bed", text: "4 Premium Bedrooms (2nd Floor)" },
-                { icon: "fa-bed", text: "1 Master Suite with King Bed & Jacuzzi" },
-                { icon: "fa-tv", text: "Advanced Entertainment Systems" },
-                { icon: "fa-wifi", text: "Private WiFi Network" },
-                { icon: "fa-snowflake", text: "Smart Climate Control System" },
-                { icon: "fa-bath", text: "5 Premium Bathrooms" },
-                { icon: "fa-mountain", text: "Private Rooftop Terrace" },
-                { icon: "fa-spa", text: "Private Spa Room" },
-                { icon: "fa-car", text: "Valet Parking Service" },
-                { icon: "fa-users", text: "Executive Conference Room" },
-                { icon: "fa-concierge-bell", text: "Dedicated Staff Team" },
-                { icon: "fa-shield-alt", text: "Enhanced Security & Privacy" },
-                { icon: "fa-microphone", text: "Professional Sound System" }
-            ],
-            inclusions: [
-                "VIP group welcome",
-                "Dedicated staff team",
-                "24/7 premium service",
-                "Enhanced amenities",
-                "Transportation service",
-                "Group concierge team",
-                "Private facilities access",
-                "Spa & wellness services",
-                "Premium dining service",
-                "Complete event planning",
-                "Security & privacy service",
-                "Business support services",
-                "Professional kitchen service",
-                "Customized experiences"
-            ]
-        }
+        2:  { title:"VIP Suite - 2 Guests", description:"Premium suite with upgraded amenities and better service.", amenities:[{icon:"fa-bed",text:"King Size Premium Bed"},{icon:"fa-tv",text:"50-inch Smart TV"},{icon:"fa-wifi",text:"Premium High-Speed WiFi"},{icon:"fa-bath",text:"Luxury Bathroom with Jacuzzi"},{icon:"fa-mountain",text:"Private Balcony with Ocean View"},{icon:"fa-concierge-bell",text:"Priority Service"}], inclusions:["VIP welcome with wine","Priority check-in/out","Twice-daily housekeeping","Premium toiletries","Personal concierge","Spa discount","In-room breakfast"] },
+        8:  { title:"VIP Family Suite - 4-8 Guests", description:"Premium family accommodation with personalized service.", amenities:[{icon:"fa-bed",text:"4 King Size Premium Beds"},{icon:"fa-tv",text:"Premium Entertainment Systems"},{icon:"fa-wifi",text:"High-Speed WiFi"},{icon:"fa-bath",text:"4 Premium Bathrooms"},{icon:"fa-mountain",text:"Private Terrace with Pool View"},{icon:"fa-concierge-bell",text:"Family Concierge"}], inclusions:["Family welcome package","Dedicated concierge","Enhanced housekeeping","Premium amenities","Transportation service","Spa discount"] },
+        20: { title:"VIP Group Townhouse - 10-20 Guests", description:"Luxury two-story townhouse with premium amenities and dedicated service.", amenities:[{icon:"fa-home",text:"2-Story Luxury Townhouse"},{icon:"fa-utensils",text:"Gourmet Kitchen"},{icon:"fa-bed",text:"5 Premium Bedrooms"},{icon:"fa-wifi",text:"Premium WiFi Network"},{icon:"fa-bath",text:"5 Premium Bathrooms"},{icon:"fa-concierge-bell",text:"Group Concierge Team"}], inclusions:["Group welcome reception","Dedicated concierge team","Premium amenities","Private facilities","Spa & wellness","Complete event planning"] }
     }
 };
 
-function getRoomFeatures(roomType) {
-    const roomData = roomDetails[roomType];
-    if (!roomData) return 'Standard amenities included';
-    
-    // Create a simple text summary for basic display
-    const amenityTexts = roomData.amenities.map(amenity => amenity.text);
-    return amenityTexts.slice(0, 4).join(', ') + (amenityTexts.length > 4 ? '...' : '');
+function displayDetailedRoomPreview(roomType, paxCount) {
+    const detail = document.getElementById('roomDetail');
+    if (!roomType || !paxCount || !detail) return;
+    const roomData = roomDetails[roomType]?.[paxCount];
+    if (!roomData) {
+        const carousel = document.getElementById('resortCarousel');
+        if (carousel) carousel.style.display = 'none';
+        detail.style.display = '';
+        detail.innerHTML = '<div class="preview-placeholder"><i class="fas fa-exclamation-triangle"></i><p>Room details not available</p></div>';
+        return;
+    }
+    const selectedRoom = document.querySelector('.rm-room-card.rm-selected');
+    const roomNumber   = selectedRoom?.dataset.roomNumber || '';
+    if (roomNumber) {
+        fetch(`api/get_room_image.php?room_number=${roomNumber}&room_type=${roomType}&pax_group=${paxCount}`)
+            .then(r => r.json())
+            .then(data => renderPreview(roomData, data.success && data.images?.length ? data.images : null, roomNumber, roomType))
+            .catch(() => renderPreview(roomData, null, roomNumber, roomType));
+    } else {
+        renderPreview(roomData, null, '', roomType);
+    }
 }
 
-// Enhanced room preview function with detailed amenities based on pax and room type
-function displayDetailedRoomPreview(roomType, paxCount) {
-    const previewContainer = document.getElementById('roomPreview');
-    
-    console.log('Displaying room preview for:', roomType, 'with pax:', paxCount);
-    
-    if (!roomType || !paxCount || !previewContainer) {
-        console.error('Missing room type, pax count, or preview container');
-        return;
+function renderPreview(roomData, images, roomNumber, roomType) {
+    const carousel = document.getElementById('resortCarousel');
+    const detail   = document.getElementById('roomDetail');
+    if (!detail) return;
+    if (carousel) carousel.style.display = 'none';
+    detail.style.display = '';
+    let imageHTML = '';
+    if (images && images.length > 0) {
+        imageHTML = `<div class="room-preview-gallery"><div class="gallery-main-image"><img id="main-room-image" src="${images[0].file_path}" alt="${roomData.title}" style="width:100%;height:250px;object-fit:cover;border-radius:15px;border:2px solid #C9A961;"></div><div class="gallery-thumbnails">${images.map((img,i)=>`<img class="gallery-thumbnail ${i===0?'active':''}" src="${img.file_path}" data-index="${i}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid ${i===0?'#C9A961':'transparent'};cursor:pointer;flex-shrink:0;">`).join('')}</div></div>`;
+    } else if (roomNumber) {
+        imageHTML = `<div class="room-image-placeholder"><i class="fas fa-image"></i><p>Room ${roomNumber} - ${roomType}</p><p style="font-size:0.8rem;opacity:0.6;">No images uploaded yet</p></div>`;
     }
-    
-    const roomData = roomDetails[roomType] && roomDetails[roomType][paxCount];
-    console.log('Room data:', roomData);
-
-    if (!roomData) {
-        console.error('No room data found for', roomType, 'with', paxCount, 'pax');
-        previewContainer.innerHTML = `
-            <div class="preview-placeholder">
-                <i class="fas fa-exclamation-triangle"></i>
-                <p>Room details not available</p>
-            </div>
-        `;
-        return;
-    }
-
-    // Get the selected room to show its specific image
-    const selectedRoom = document.querySelector('.room-card.selected');
-    let roomNumber = '';
-    let roomImages = null;
-    
-    if (selectedRoom) {
-        roomNumber = selectedRoom.dataset.roomNumber;
-        
-        // Load room images (multiple images)
-        fetch(`api/get_room_image.php?room_number=${roomNumber}&room_type=${roomType}&pax_group=${paxCount}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.images && data.images.length > 0) {
-                    roomImages = data.images;
-                } else {
-                    roomImages = null; // No images available
-                }
-                renderRoomPreview();
-            })
-            .catch(error => {
-                console.error('Error loading room images:', error);
-                roomImages = null; // No images available
-                renderRoomPreview();
-            });
-    } else {
-        renderRoomPreview();
-    }
-    
-    function renderRoomPreview() {
-        // Create room images gallery HTML
-        let imageHTML = '';
-        if (roomImages && roomImages.length > 0) {
-            imageHTML = `
-                <div class="room-preview-gallery">
-                    <div class="gallery-main-image">
-                        <img id="main-room-image" src="${roomImages[0].file_path}" alt="${roomData.title}" style="width: 100%; height: 250px; object-fit: cover; border-radius: 15px; border: 2px solid #C9A961;">
-                    </div>
-                    <div class="gallery-thumbnails" style="display: flex; gap: 0.5rem; margin-top: 1rem; overflow-x: auto; padding: 0.5rem 0;">
-                        ${roomImages.map((img, index) => `
-                            <img class="gallery-thumbnail ${index === 0 ? 'active' : ''}" 
-                                 src="${img.file_path}" 
-                                 alt="Room Image ${index + 1}"
-                                 data-index="${index}"
-                                 style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid ${index === 0 ? '#C9A961' : 'transparent'}; cursor: pointer; flex-shrink: 0;">
-                        `).join('')}
-                    </div>
-                    <p style="text-align: center; color: #C9A961; font-size: 0.9rem; margin: 0.5rem 0 0 0;">
-                        <i class="fas fa-camera"></i> Room ${roomNumber} - ${roomType} (${roomImages.length} photos)
-                    </p>
-                </div>
-            `;
-        } else if (roomNumber) {
-            imageHTML = `
-                <div class="room-image-placeholder">
-                    <i class="fas fa-image"></i>
-                    <p>Room ${roomNumber} - ${roomType}</p>
-                    <p style="font-size: 0.8rem; opacity: 0.6;">No images uploaded yet</p>
-                </div>
-            `;
-        }
-
-        // Create all amenities HTML
-        let amenitiesHTML = '';
-        if (roomData.amenities && roomData.amenities.length > 0) {
-            amenitiesHTML = '<div class="room-preview-amenities"><h4><i class="fas fa-star"></i> Amenities</h4><div class="amenities-preview-grid">';
-            roomData.amenities.forEach(amenity => {
-                amenitiesHTML += `
-                    <div class="amenity-preview-item">
-                        <i class="fas ${amenity.icon}"></i>
-                        <span>${amenity.text}</span>
-                    </div>
-                `;
-            });
-            amenitiesHTML += '</div></div>';
-        }
-
-        // Create all inclusions HTML
-        let inclusionsHTML = '';
-        if (roomData.inclusions && roomData.inclusions.length > 0) {
-            inclusionsHTML = '<div class="room-preview-inclusions"><h4><i class="fas fa-gift"></i> Included Services</h4><ul class="inclusions-preview-list">';
-            roomData.inclusions.forEach(inclusion => {
-                inclusionsHTML += `<li><i class="fas fa-check-circle"></i> ${inclusion}</li>`;
-            });
-            inclusionsHTML += '</ul></div>';
-        }
-
-        const finalHTML = `
-            <div class="room-preview-card">
-                <div class="room-preview-title">
-                    <h3>${roomData.title}</h3>
-                    <p class="room-preview-desc">${roomData.description}</p>
-                </div>
-                ${imageHTML}
-                ${amenitiesHTML}
-                ${inclusionsHTML}
-            </div>
-        `;
-
-        console.log('Setting preview HTML for', roomType, paxCount, 'pax');
-        previewContainer.innerHTML = finalHTML;
-        
-        // Add gallery functionality if images exist
-        if (roomImages && roomImages.length > 1) {
-            const thumbnails = previewContainer.querySelectorAll('.gallery-thumbnail');
-            const mainImage = previewContainer.querySelector('#main-room-image');
-            
-            thumbnails.forEach(thumbnail => {
-                thumbnail.addEventListener('click', function() {
-                    const index = parseInt(this.dataset.index);
-                    
-                    // Update main image
-                    mainImage.src = roomImages[index].file_path;
-                    
-                    // Update thumbnail borders
-                    thumbnails.forEach(thumb => {
-                        thumb.style.border = '2px solid transparent';
-                        thumb.classList.remove('active');
-                    });
-                    this.style.border = '2px solid #C9A961';
-                    this.classList.add('active');
-                });
-            });
-        }
+    let amenitiesHTML = '<div class="room-preview-amenities"><h4><i class="fas fa-star"></i> Amenities</h4><div class="amenities-preview-grid">';
+    roomData.amenities.forEach(a => { amenitiesHTML += `<div class="amenity-preview-item"><i class="fas ${a.icon}"></i><span>${a.text}</span></div>`; });
+    amenitiesHTML += '</div></div>';
+    let inclusionsHTML = '<div class="room-preview-inclusions"><h4><i class="fas fa-gift"></i> Included Services</h4><ul class="inclusions-preview-list">';
+    roomData.inclusions.forEach(inc => { inclusionsHTML += `<li><i class="fas fa-check-circle"></i> ${inc}</li>`; });
+    inclusionsHTML += '</ul></div>';
+    detail.innerHTML = `<div class="room-preview-card"><div class="room-preview-title"><h3>${roomData.title}</h3><p class="room-preview-desc">${roomData.description}</p></div>${imageHTML}${amenitiesHTML}${inclusionsHTML}</div>`;
+    if (images && images.length > 1) {
+        const thumbs  = detail.querySelectorAll('.gallery-thumbnail');
+        const mainImg = detail.querySelector('#main-room-image');
+        thumbs.forEach(t => { t.addEventListener('click', function() { const idx=parseInt(this.dataset.index); mainImg.src=images[idx].file_path; thumbs.forEach(th=>{th.style.border='2px solid transparent';th.classList.remove('active');}); this.style.border='2px solid #C9A961'; this.classList.add('active'); }); });
     }
 }
 
 // ============================================
 // FORM SUBMISSION
 // ============================================
-
 function handleBookingSubmit(event) {
-    const form = event.target;
-    const submitBtn = document.getElementById('submitBtn');
-    
-    // Validate form
-    if (!validateBookingForm()) {
+    const name  = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const room  = document.getElementById('room').value;
+    const ci    = document.getElementById('checkin').value;
+    const co    = document.getElementById('checkout').value;
+    const price = document.getElementById('price').value;
+
+    if (!name || !email || !room || !ci || !co || !price || parseFloat(price) <= 0) {
         event.preventDefault();
+        rmToast('Please complete all steps before submitting.');
         return false;
     }
-    
-    // Add special requests to room data
-    const specialRequests = document.getElementById('specialRequests').value;
-    const roomDataInput = document.getElementById('roomData');
-    
-    if (roomDataInput.value && specialRequests) {
-        try {
-            const roomData = JSON.parse(roomDataInput.value);
-            roomData.special_requests = specialRequests;
-            roomDataInput.value = JSON.stringify(roomData);
-        } catch (e) {
-            console.error('Error updating room data:', e);
-        }
+
+    // ── LOGIN CHECK ────────────────────────────────────────────────
+    // Check if user is logged in. If not, save form data and redirect to login
+    const isLoggedIn = document.getElementById('isUserLoggedIn')?.value === '1';
+    if (!isLoggedIn) {
+        event.preventDefault();
+        
+        // Save all booking form data to sessionStorage
+        const bookingData = {
+            name: name,
+            email: email,
+            phone: document.getElementById('phone').value,
+            guests: document.getElementById('guests').value,
+            room: room,
+            roomData: document.getElementById('roomData').value,
+            price: price,
+            checkin: ci,
+            checkout: co,
+            specialRequests: document.getElementById('specialRequests')?.value || '',
+            nights: document.getElementById('nights').value
+        };
+        sessionStorage.setItem('pendingBooking', JSON.stringify(bookingData));
+        sessionStorage.setItem('bookingStep', '4'); // Resume from review step
+        
+        // Redirect to login with return URL
+        window.location.href = 'login.php?return=booking';
+        return false;
     }
-    
-    // Disable submit button to prevent double submission
+    // ────────────────────────────────────────────────────────────────
+
+    // Attach special requests to roomData
+    const specialRequests = document.getElementById('specialRequests')?.value;
+    const roomDataInput   = document.getElementById('roomData');
+    if (roomDataInput?.value && specialRequests) {
+        try { const rd = JSON.parse(roomDataInput.value); rd.special_requests = specialRequests; roomDataInput.value = JSON.stringify(rd); } catch(e) {}
+    }
+
+    const submitBtn = document.getElementById('submitBtn');
     if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing Booking...';
-        
-        // Re-enable button after 10 seconds as fallback
-        setTimeout(() => {
-            if (submitBtn.disabled) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-credit-card"></i> Complete Booking';
-            }
-        }, 10000);
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        setTimeout(() => { if (submitBtn.disabled) { submitBtn.disabled=false; submitBtn.innerHTML='<i class="fas fa-credit-card"></i> Confirm & Pay'; } }, 10000);
     }
-    
     return true;
 }
 
-function validateBookingForm() {
-    const requiredFields = ['name', 'email', 'phone', 'guests', 'checkin', 'checkout', 'room'];
-    let isValid = true;
-    let firstInvalidField = null;
-    
-    requiredFields.forEach(fieldName => {
-        const field = document.getElementById(fieldName);
-        if (field && !field.value.trim()) {
-            field.style.borderColor = '#dc3545';
-            field.style.boxShadow = '0 0 0 0.2rem rgba(220, 53, 69, 0.25)';
-            if (!firstInvalidField) {
-                firstInvalidField = field;
-            }
-            isValid = false;
-        } else if (field) {
-            field.style.borderColor = '#e0e0e0';
-            field.style.boxShadow = 'none';
-        }
-    });
-    
-    // Validate email format
-    const emailField = document.getElementById('email');
-    if (emailField && emailField.value) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(emailField.value)) {
-            emailField.style.borderColor = '#dc3545';
-            emailField.style.boxShadow = '0 0 0 0.2rem rgba(220, 53, 69, 0.25)';
-            if (!firstInvalidField) {
-                firstInvalidField = emailField;
-            }
-            isValid = false;
-        }
-    }
-    
-    // Validate dates
-    if (!validateDates()) {
-        isValid = false;
-        const checkinField = document.getElementById('checkin');
-        if (checkinField && !firstInvalidField) {
-            firstInvalidField = checkinField;
-        }
-    }
-    
-    // Validate price
-    const priceInput = document.getElementById('price');
-    if (priceInput && (!priceInput.value || parseFloat(priceInput.value) <= 0)) {
-        showAlert('Please select a room and valid dates to calculate the price.', 'error');
-        isValid = false;
-    }
-    
-    if (!isValid) {
-        if (firstInvalidField) {
-            firstInvalidField.focus();
-            firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-        showAlert('Please fill in all required fields correctly and select a room.', 'error');
-    }
-    
-    return isValid;
-}
+window.addEventListener('error', e => console.error('Booking error:', e.error));
 
-// Show alert function
-function showAlert(message, type = 'info') {
-    // Remove existing alerts
-    const existingAlert = document.querySelector('.booking-alert');
-    if (existingAlert) {
-        existingAlert.remove();
-    }
-    
-    // Create new alert
-    const alert = document.createElement('div');
-    alert.className = `booking-alert alert-${type}`;
-    alert.innerHTML = `
-        <i class="fas fa-${type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
-        <span>${message}</span>
-        <button type="button" class="alert-close" onclick="this.parentElement.remove()">
-            <i class="fas fa-times"></i>
-        </button>
-    `;
-    
-    // Insert at top of booking form
-    const bookingCard = document.querySelector('.booking-card');
-    if (bookingCard) {
-        bookingCard.insertBefore(alert, bookingCard.firstChild);
-        alert.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-    
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-        if (alert.parentElement) {
-            alert.remove();
-        }
-    }, 5000);
-}
-
-// ============================================
-// ERROR HANDLING
-// ============================================
-
-window.addEventListener('error', function(e) {
-    console.error('Booking page error:', e.error);
-});
-
-// ============================================
-// UTILITY FUNCTIONS
-// ============================================
-
-// Format currency
-function formatCurrency(amount) {
-    return new Intl.NumberFormat('en-PH', {
-        style: 'currency',
-        currency: 'PHP'
-    }).format(amount);
-}
+// Reset room preview when user leaves the booking page
+window.addEventListener('beforeunload', clearRoomPreview);
+window.addEventListener('pagehide', clearRoomPreview);

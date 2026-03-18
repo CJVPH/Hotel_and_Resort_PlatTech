@@ -216,42 +216,6 @@ $currentPage = 'settings';
                         </div>
                     </div>
                     
-                    <div style="border-top: 2px solid #e0e0e0; padding-top: 1.5rem; margin-top: 1rem;">
-                        <h3 style="margin-bottom: 1rem; color: #2C3E50;"><i class="fas fa-star"></i> Feature Icons (Hero Section)</h3>
-                        
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
-                            <div class="form-group">
-                                <label>Feature 1 Icon</label>
-                                <input type="text" name="feature_1_icon" id="feature_1_icon" class="form-control" placeholder="fas fa-star">
-                                <small style="color: #666;">FontAwesome class</small>
-                            </div>
-                            <div class="form-group">
-                                <label>Feature 1 Text</label>
-                                <input type="text" name="feature_1_text" id="feature_1_text" class="form-control" placeholder="5 Star Luxury">
-                            </div>
-                            <div></div>
-                            
-                            <div class="form-group">
-                                <label>Feature 2 Icon</label>
-                                <input type="text" name="feature_2_icon" id="feature_2_icon" class="form-control" placeholder="fas fa-wifi">
-                            </div>
-                            <div class="form-group">
-                                <label>Feature 2 Text</label>
-                                <input type="text" name="feature_2_text" id="feature_2_text" class="form-control" placeholder="Free WIFI">
-                            </div>
-                            <div></div>
-                            
-                            <div class="form-group">
-                                <label>Feature 3 Icon</label>
-                                <input type="text" name="feature_3_icon" id="feature_3_icon" class="form-control" placeholder="fas fa-parking">
-                            </div>
-                            <div class="form-group">
-                                <label>Feature 3 Text</label>
-                                <input type="text" name="feature_3_text" id="feature_3_text" class="form-control" placeholder="Free Parking">
-                            </div>
-                        </div>
-                    </div>
-                    
                     <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">
                         <i class="fas fa-save"></i> Save Homepage Settings
                     </button>
@@ -465,25 +429,31 @@ $currentPage = 'settings';
     <!-- End Photo Management Section -->
 </div>
 
-    <script src="assets/js/admin.js"></script>
+    <script src="assets/js/admin.js?v=<?php echo filemtime(__DIR__ . '/assets/js/admin.js'); ?>"></script>
     <script>
         // Tab switching functionality
         document.querySelectorAll('.settings-tab-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const tabName = this.getAttribute('data-tab');
-                
-                // Remove active class from all buttons and contents
                 document.querySelectorAll('.settings-tab-btn').forEach(btn => btn.classList.remove('active'));
                 document.querySelectorAll('.settings-tab-content').forEach(content => content.classList.remove('active'));
-                
-                // Add active class to clicked button and corresponding content
                 this.classList.add('active');
                 document.getElementById(tabName).classList.add('active');
+                sessionStorage.setItem('settingsTab', tabName);
             });
         });
-        
-        // Load homepage settings on page load
+
+        // Restore last active tab + load settings on DOM ready
         document.addEventListener('DOMContentLoaded', function() {
+            const saved = sessionStorage.getItem('settingsTab');
+            if (saved) {
+                document.querySelectorAll('.settings-tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.settings-tab-content').forEach(c => c.classList.remove('active'));
+                const btn = document.querySelector(`.settings-tab-btn[data-tab="${saved}"]`);
+                const content = document.getElementById(saved);
+                if (btn) btn.classList.add('active');
+                if (content) content.classList.add('active');
+            }
             loadHomepageSettings();
         });
         

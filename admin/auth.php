@@ -8,8 +8,6 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // If admin session is not set, redirect to admin login
 if (empty($_SESSION['admin_id'])) {
-    // Preserve requested URL for redirect after login
-    $current = $_SERVER['REQUEST_URI'] ?? '/admin/index.php';
     header('Location: login.php');
     exit;
 }

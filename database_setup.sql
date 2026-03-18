@@ -295,3 +295,123 @@ DEALLOCATE PREPARE stmt;
 ALTER TABLE reservations ADD CONSTRAINT fk_reservations_user_id 
 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL;
 
+
+-- ============================================
+-- PAVILION AVAILABILITY & BOOKINGS
+-- ============================================
+
+-- Pavilion availability slots (admin sets which dates are open, max pax, price)
+CREATE TABLE IF NOT EXISTS pavilion_slots (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    event_date DATE NOT NULL UNIQUE,
+    max_pax INT NOT NULL DEFAULT 0,
+    price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    note VARCHAR(255) DEFAULT '',
+    status ENUM('available','booked','blocked') NOT NULL DEFAULT 'available',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_event_date (event_date),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Pavilion event bookings
+CREATE TABLE IF NOT EXISTS pavilion_bookings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    slot_id INT NOT NULL,
+    user_id INT(11) NULL,
+    guest_name VARCHAR(100) NOT NULL,
+    email VARCHAR(100),
+    phone VARCHAR(30),
+    pax INT NOT NULL DEFAULT 1,
+    event_type VARCHAR(100) DEFAULT '',
+    event_time VARCHAR(20) DEFAULT '',
+    special_requests TEXT DEFAULT NULL,
+    price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    status ENUM('pending','confirmed','cancelled') NOT NULL DEFAULT 'pending',
+    payment_status VARCHAR(20) DEFAULT 'pending',
+    payment_amount DECIMAL(10,2) DEFAULT 0.00,
+    payment_percentage INT DEFAULT 0,
+    payment_method VARCHAR(50),
+    payment_reference VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (slot_id) REFERENCES pavilion_slots(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_slot_id (slot_id),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ============================================
+-- MIGRATION: Add payment columns to pavilion_bookings if upgrading
+-- ============================================
+ALTER TABLE pavilion_bookings
+    MODIFY COLUMN status ENUM('pending','confirmed','cancelled') NOT NULL DEFAULT 'pending',
+    ADD COLUMN IF NOT EXISTS user_id INT(11) NULL AFTER slot_id,
+    ADD COLUMN IF NOT EXISTS payment_status VARCHAR(20) DEFAULT 'pending' AFTER status,
+    ADD COLUMN IF NOT EXISTS payment_amount DECIMAL(10,2) DEFAULT 0.00 AFTER payment_status,
+    ADD COLUMN IF NOT EXISTS payment_percentage INT DEFAULT 0 AFTER payment_amount,
+    ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50) AFTER payment_percentage,
+    ADD COLUMN IF NOT EXISTS payment_reference VARCHAR(100) AFTER payment_method;
+
+-- MIGRATION: Add event_time and special_requests to pavilion_bookings
+ALTER TABLE pavilion_bookings
+    ADD COLUMN IF NOT EXISTS event_time VARCHAR(20) DEFAULT '' AFTER event_type,
+    ADD COLUMN IF NOT EXISTS special_requests TEXT DEFAULT NULL AFTER event_time;
+
+-- MIGRATION: Add end time and buffet columns
+ALTER TABLE pavilion_bookings
+    ADD COLUMN IF NOT EXISTS event_end_time VARCHAR(20) DEFAULT '' AFTER event_time,
+    ADD COLUMN IF NOT EXISTS buffet_items TEXT DEFAULT NULL AFTER special_requests,
+    ADD COLUMN IF NOT EXISTS checkout_date DATE NULL AFTER event_date;
+
+-- Default buffet menu items for pavilion
+INSERT INTO pavilion_menu (name, description, price, prep_time, available) VALUES
+('Lechon de Leche',    'Whole roasted suckling pig, crispy skin',               850.00, 240, 1),
+('Seafood Platter',    'Grilled fish, shrimp, squid, and crab',                 450.00,  60, 1),
+('Beef Caldereta',     'Slow-cooked beef in rich tomato sauce',                 320.00,  90, 1),
+('Chicken Inasal',     'Grilled marinated chicken, garlic rice',                280.00,  45, 1),
+('Pancit Palabok',     'Rice noodles with shrimp sauce and toppings',           180.00,  30, 1),
+('Vegetable Kare-Kare','Mixed vegetables in peanut sauce with bagoong',         150.00,  45, 1),
+('Dessert Table',      'Leche flan, buko pandan, fruit salad, halo-halo',       250.00,  30, 1)
+ON DUPLICATE KEY UPDATE name=VALUES(name);
+
+-- ============================================
+-- MIGRATION: New pavilion model — all dates available, admin blocks specific dates
+-- pavilion_bookings now stores event_date directly (slot_id becomes optional)
+-- ============================================
+ALTER TABLE pavilion_bookings
+    ADD COLUMN IF NOT EXISTS event_date DATE NULL AFTER slot_id;
+
+-- Backfill event_date from slot if exists
+UPDATE pavilion_bookings pb
+    JOIN pavilion_slots ps ON pb.slot_id = ps.id
+    SET pb.event_date = ps.event_date
+    WHERE pb.event_date IS NULL;
+
+-- Add pavilion_price to site_settings if not present
+INSERT IGNORE INTO site_settings (setting_key, setting_value) VALUES ('pavilion_price', '5000');
+
+-- ============================================
+-- MIGRATION: Make slot_id optional (new model uses event_date directly)
+-- ============================================
+ALTER TABLE pavilion_bookings
+    MODIFY COLUMN slot_id INT NULL DEFAULT NULL;
+
+-- ============================================
+-- PAVILION DYNAMIC PRICING
+-- ============================================
+CREATE TABLE IF NOT EXISTS pavilion_event_prices (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    event_type VARCHAR(100) NOT NULL UNIQUE,
+    base_price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO pavilion_event_prices (event_type, base_price) VALUES
+('Wedding',          50000.00),
+('Corporate Event',  40000.00),
+('Anniversary',      25000.00),
+('Family Reunion',   25000.00),
+('Birthday Party',   15000.00),
+('Graduation',       15000.00),
+('Other',            15000.00)
+ON DUPLICATE KEY UPDATE base_price = VALUES(base_price);

@@ -38,7 +38,7 @@ try {
     <nav class="navbar">
         <div class="nav-container">
             <a href="../index.php#top" class="nav-logo">
-                <i class="fas fa-hotel"></i>
+                <img src="../uploads/logo/logo.png" alt="Paradise Hotel & Resort" class="nav-logo-img" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;">
                 <span>Paradise Hotel & Resort</span>
             </a>
             <button class="nav-toggle" aria-label="Toggle navigation menu">
@@ -53,13 +53,13 @@ try {
                         <i class="fas fa-chevron-down"></i>
                     </a>
                     <div class="dropdown-menu">
-                        <a href="regular-gallery.php" class="dropdown-item">
+                        <a href="../room-gallery.php?type=regular" class="dropdown-item">
                             <i class="fas fa-bed"></i> Regular
                         </a>
-                        <a href="deluxe-gallery.php" class="dropdown-item">
+                        <a href="../room-gallery.php?type=deluxe" class="dropdown-item">
                             <i class="fas fa-crown"></i> Deluxe
                         </a>
-                        <a href="vip-gallery.php" class="dropdown-item">
+                        <a href="../room-gallery.php?type=vip" class="dropdown-item">
                             <i class="fas fa-gem"></i> VIP
                         </a>
                     </div>
@@ -183,7 +183,7 @@ try {
                 <?php if (!empty($waterPhotos)): ?>
                     <?php foreach ($waterPhotos as $index => $photo): ?>
                     <div class="gallery-item" data-index="<?php echo $index; ?>">
-                        <img src="<?php echo htmlspecialchars($photo['file_path']); ?>" alt="Water Activity <?php echo $index + 1; ?>" loading="lazy">
+                        <img src="../<?php echo htmlspecialchars($photo['file_path']); ?>" alt="Water Activity <?php echo $index + 1; ?>" loading="lazy">
                         <div class="gallery-overlay">
                             <i class="fas fa-search-plus"></i>
                         </div>
@@ -207,7 +207,7 @@ try {
                             <div class="menu-list-item">
                                 <div class="menu-item-image-small">
                                     <?php if (!empty($activity['image'])): ?>
-                                        <img src="uploads/water_activities/<?php echo htmlspecialchars($activity['image']); ?>" alt="<?php echo htmlspecialchars($activity['name']); ?>">
+                                        <img src="../uploads/water_activities/<?php echo htmlspecialchars($activity['image']); ?>" alt="<?php echo htmlspecialchars($activity['name']); ?>">
                                     <?php else: ?>
                                         <img src="../assets/images/default-room.jpg" alt="<?php echo htmlspecialchars($activity['name']); ?>">
                                     <?php endif; ?>

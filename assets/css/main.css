@@ -29,7 +29,7 @@ body {
     top: 0;
     width: 100%;
     z-index: 1000;
-    padding: 1.5rem 0;
+    padding: 0.6rem 0;
     box-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
     transition: all 0.3s ease;
     min-height: auto;
@@ -67,6 +67,15 @@ body {
 
 .nav-logo i {
     color: white;
+}
+
+.nav-logo-img {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    display: block;
 }
 
 .nav-menu {

@@ -38,7 +38,24 @@ function requireLogin() {
     if (!isLoggedIn()) {
         // Store the current page to redirect back after login
         $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
-        header('Location: login.php');
+        // Build absolute URL to login.php regardless of which subdirectory calls this
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host   = $_SERVER['HTTP_HOST'];
+        // Find the root of the app (go up from current script to find login.php)
+        $scriptDir = dirname($_SERVER['SCRIPT_FILENAME']);
+        $docRoot   = $_SERVER['DOCUMENT_ROOT'];
+        // Walk up directories until we find login.php
+        $dir = $scriptDir;
+        for ($i = 0; $i < 5; $i++) {
+            if (file_exists($dir . '/login.php')) {
+                $loginPath = str_replace(str_replace('\\','/',$docRoot), '', str_replace('\\','/',$dir)) . '/login.php';
+                header('Location: ' . $scheme . '://' . $host . $loginPath);
+                exit();
+            }
+            $dir = dirname($dir);
+        }
+        // Fallback
+        header('Location: /login.php');
         exit();
     }
 }

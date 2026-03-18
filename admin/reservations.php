@@ -5,33 +5,36 @@ require_once '../config/auth.php';
 // Require admin login
 requireAdminLogin();
 
-// Handle status updates
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+// Handle AJAX status updates
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+    header('Content-Type: application/json');
     $reservationId = intval($_POST['reservation_id'] ?? 0);
     $action = $_POST['action'];
-    
+    $result = ['success' => false, 'message' => 'Invalid request'];
+
     if ($reservationId > 0) {
         try {
             $conn = getDBConnection();
-            
             if ($action === 'confirm') {
                 $stmt = $conn->prepare("UPDATE reservations SET status = 'confirmed' WHERE id = ?");
                 $stmt->bind_param("i", $reservationId);
                 $stmt->execute();
+                $result = ['success' => true, 'new_status' => 'confirmed'];
                 $stmt->close();
             } elseif ($action === 'cancel') {
                 $stmt = $conn->prepare("UPDATE reservations SET status = 'cancelled' WHERE id = ?");
                 $stmt->bind_param("i", $reservationId);
                 $stmt->execute();
+                $result = ['success' => true, 'new_status' => 'cancelled'];
                 $stmt->close();
             }
-            
             $conn->close();
-            
         } catch (Exception $e) {
-            error_log("Reservation update error: " . $e->getMessage());
+            $result = ['success' => false, 'message' => $e->getMessage()];
         }
     }
+    echo json_encode($result);
+    exit;
 }
 
 // Get reservations with pagination
@@ -255,7 +258,19 @@ $currentPage = 'reservations';
                                     </div>
                                 </td>
                                 <td>
-                                    <strong><?php echo htmlspecialchars($reservation['room_type']); ?></strong>
+                                    <?php
+                                        $rOpts   = json_decode($reservation['options'] ?? '{}', true);
+                                        $rNum    = $rOpts['individual_room']['room_number'] ?? '';
+                                        $rType   = $rOpts['individual_room']['room_type']   ?? $reservation['room_type'] ?? '';
+                                        if (strpos($rType, ' - ') !== false) $rType = explode(' - ', $rType)[0];
+                                        if ($rNum && $rType) {
+                                            echo '<strong>' . htmlspecialchars($rType) . ' Room ' . htmlspecialchars($rNum) . '</strong>';
+                                        } elseif ($rNum) {
+                                            echo '<strong>Room ' . htmlspecialchars($rNum) . '</strong>';
+                                        } else {
+                                            echo '<strong>' . htmlspecialchars($rType ?: 'N/A') . '</strong>';
+                                        }
+                                    ?>
                                     <div class="reservation-details">
                                         <div><i class="fas fa-calendar"></i> <?php echo date('M j', strtotime($reservation['checkin_date'])); ?> - <?php echo date('M j, Y', strtotime($reservation['checkout_date'])); ?></div>
                                         <?php
@@ -288,23 +303,15 @@ $currentPage = 'reservations';
                                     </span>
                                 </td>
                                 <td><?php echo date('M j, Y', strtotime($reservation['created_at'])); ?></td>
-                                <td>
+                                <td id="actions-<?php echo $reservation['id']; ?>">
                                     <?php if ($reservation['status'] === 'pending'): ?>
                                     <div class="reservation-actions">
-                                        <form method="POST" style="display: inline;">
-                                            <input type="hidden" name="reservation_id" value="<?php echo $reservation['id']; ?>">
-                                            <input type="hidden" name="action" value="confirm">
-                                            <button type="submit" class="btn-action btn-confirm" onclick="return confirm('Confirm this reservation?')">
-                                                <i class="fas fa-check"></i> Confirm
-                                            </button>
-                                        </form>
-                                        <form method="POST" style="display: inline;">
-                                            <input type="hidden" name="reservation_id" value="<?php echo $reservation['id']; ?>">
-                                            <input type="hidden" name="action" value="cancel">
-                                            <button type="submit" class="btn-action btn-cancel" onclick="return confirm('Cancel this reservation?')">
-                                                <i class="fas fa-times"></i> Cancel
-                                            </button>
-                                        </form>
+                                        <button class="btn-action btn-confirm" onclick="updateReservation(<?php echo $reservation['id']; ?>,'confirm')">
+                                            <i class="fas fa-check"></i> Confirm
+                                        </button>
+                                        <button class="btn-action btn-cancel" onclick="updateReservation(<?php echo $reservation['id']; ?>,'cancel')">
+                                            <i class="fas fa-times"></i> Cancel
+                                        </button>
                                     </div>
                                     <?php else: ?>
                                     <span style="color: #666; font-style: italic;">No actions</span>
@@ -358,3 +365,30 @@ $currentPage = 'reservations';
                 <?php endif; ?>
             </div>
 <?php include 'template_footer.php'; ?>
+<script>
+function updateReservation(id, action) {
+    const label = action === 'confirm' ? 'Confirm this reservation?' : 'Cancel this reservation?';
+    if (!confirm(label)) return;
+
+    const fd = new FormData();
+    fd.append('reservation_id', id);
+    fd.append('action', action);
+
+    fetch('reservations.php', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: fd
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) { alert('Error: ' + (data.message || 'Unknown error')); return; }
+        const statusCell = document.querySelector(`#actions-${id}`).closest('tr').querySelector('.status-badge');
+        const actionsCell = document.getElementById('actions-' + id);
+        const newStatus = data.new_status;
+        statusCell.className = 'status-badge status-' + newStatus;
+        statusCell.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+        actionsCell.innerHTML = '<span style="color:#666;font-style:italic;">No actions</span>';
+    })
+    .catch(() => alert('Request failed. Please try again.'));
+}
+</script>

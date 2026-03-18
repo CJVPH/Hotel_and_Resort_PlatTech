@@ -75,17 +75,8 @@ if (!empty($errors)) {
 
 try {
     $conn = getDBConnection();
-    
-    // Prepare the insert statement
-    $sql = "INSERT INTO reservations (user_id, guest_name, email, phone, checkin_date, checkout_date, room_type, guests, price, options, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())";
-    
-    $stmt = $conn->prepare($sql);
-    
-    if (!$stmt) {
-        throw new Exception("Database prepare failed: " . $conn->error);
-    }
-    
-    // Combine special requests with options
+
+    // Parse options JSON to extract clean room_type and room_number
     $optionsData = [];
     if (!empty($options)) {
         $optionsData = json_decode($options, true) ?? [];
@@ -94,25 +85,72 @@ try {
         $optionsData['special_requests'] = $specialRequests;
     }
     $optionsJson = json_encode($optionsData);
-    
-    // Get user ID if logged in, otherwise use NULL for guest bookings
+
+    // Extract clean room_type (e.g. "Regular", "Deluxe", "VIP") from options JSON
+    $roomType   = $optionsData['individual_room']['room_type']   ?? '';
+    $roomNumber = $optionsData['individual_room']['room_number'] ?? '';
+
+    // Fallback: parse from $room string if options missing
+    if (empty($roomType)) {
+        $parts    = explode(' - ', $room);
+        $roomType = trim($parts[0] ?? $room);
+    }
+
+    // ── CONFLICT CHECK ──────────────────────────────────────────────
+    // Always block if room_number is known and dates overlap any pending/confirmed booking.
+    // Uses 3 strategies to catch all storage formats in the DB.
+    if (!empty($roomNumber)) {
+        $roomNumPattern = '%"room_number":"' . $conn->real_escape_string($roomNumber) . '"%';
+
+        // Strategy 1: NEW format — room_type is clean ("Regular") + room_number in options JSON
+        // Strategy 2: OLD format — room_type column contains room number as part of string
+        // Strategy 3: Any record where options JSON has this room_number (regardless of room_type)
+        $conflictSql = "SELECT id FROM reservations
+                        WHERE status IN ('confirmed', 'pending')
+                          AND checkin_date  < ?
+                          AND checkout_date > ?
+                          AND options LIKE ?
+                        LIMIT 1";
+        $cStmt = $conn->prepare($conflictSql);
+        $cStmt->bind_param('sss', $checkout, $checkin, $roomNumPattern);
+        $cStmt->execute();
+        $cResult = $cStmt->get_result();
+
+        if ($cResult->num_rows > 0) {
+            $cStmt->close();
+            $conn->close();
+            header('Location: booking.php?error=' . urlencode(
+                "Room {$roomNumber} is already booked for the selected dates. Please choose different dates or another room."
+            ));
+            exit();
+        }
+        $cStmt->close();
+    }
+    // ────────────────────────────────────────────────────────────────
+
+    // Insert reservation using clean room_type
+    $sql  = "INSERT INTO reservations (user_id, guest_name, email, phone, checkin_date, checkout_date, room_type, guests, price, options, status, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())";
+    $stmt = $conn->prepare($sql);
+
+    if (!$stmt) {
+        throw new Exception("Database prepare failed: " . $conn->error);
+    }
+
     $userId = isLoggedIn() ? getUserId() : null;
-    
-    // Bind parameters - MySQL handles NULL properly with 'i' type
-    $stmt->bind_param("isssssidss", $userId, $name, $email, $phone, $checkin, $checkout, $room, $guests, $price, $optionsJson);
-    
+    $stmt->bind_param("isssssidss", $userId, $name, $email, $phone, $checkin, $checkout, $roomType, $guests, $price, $optionsJson);
+
     if ($stmt->execute()) {
         $reservationId = $conn->insert_id;
         $stmt->close();
         $conn->close();
-        
-        // Redirect to payment page
+
         header('Location: payment/payment.php?reservation_id=' . $reservationId);
         exit();
     } else {
         throw new Exception("Database execution failed: " . $stmt->error);
     }
-    
+
 } catch (Exception $e) {
     error_log("Booking process error: " . $e->getMessage());
     header('Location: booking.php?error=Database error, please try again');

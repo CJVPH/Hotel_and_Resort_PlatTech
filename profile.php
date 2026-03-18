@@ -247,6 +247,11 @@ $conn->close();
         <div class="profile-header">
             <h1><i class="fas fa-user-circle"></i> My Profile</h1>
             <p>Manage your account information</p>
+            <div style="margin-top: 1rem;">
+                <a href="logout.php" class="btn-submit" style="display: inline-block; background: #e74c3c; text-decoration: none; color: white; padding: 0.6rem 1.5rem; border-radius: 5px;" onclick="return confirm('Are you sure you are going to log out?');">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
         </div>
         
         <div class="profile-card">

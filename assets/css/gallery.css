@@ -2,35 +2,7 @@
    GALLERY PAGE STYLES
    ============================================ */
 
-/* Compact Navigation for Gallery Pages */
-.navbar {
-    padding: 1.2rem 0 !important;
-}
-
-.nav-container {
-    padding: 0 1.5rem !important;
-    gap: 2rem !important;
-}
-
-.nav-logo {
-    font-size: 1.5rem !important;
-}
-
-.nav-menu {
-    gap: 2rem !important;
-    justify-content: flex-start !important;
-    flex: 1 !important;
-}
-
-.nav-link {
-    padding: 0.7rem 1.3rem !important;
-    font-size: 1.1rem !important;
-}
-
-.nav-link.book-now {
-    padding: 0.8rem 1.5rem !important;
-    margin-left: auto !important;
-}
+/* Gallery page — no global navbar overrides (handled per-page) */
 
 /* Gallery Header */
 .gallery-header {
@@ -1390,3 +1362,64 @@
         font-size: 0.85rem;
     }
 }
+
+/* ============================================
+   ROOM GALLERY — TYPE TAB BAR
+   ============================================ */
+
+.rg-tab-bar {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    background: #1e2d3d;
+    padding: 0 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,.25);
+}
+
+.rg-tab {
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,.65);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    padding: 1.2rem 3rem;
+    cursor: pointer;
+    letter-spacing: .5px;
+    border-bottom: 3px solid transparent;
+    transition: color .2s, border-color .2s;
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+}
+
+.rg-tab:hover {
+    color: #fff;
+}
+
+.rg-tab.active {
+    color: #fff;
+    border-bottom-color: #C9A961;
+}
+
+.rg-tab i {
+    font-size: .95rem;
+    opacity: .8;
+}
+
+.rg-panel-desc {
+    text-align: center;
+    color: #666;
+    font-size: 1.05rem;
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 600px) {
+    .rg-tab { padding: .9rem 1.4rem; font-size: .9rem; }
+}
+
+/* Remove old sticky tab bar if present */
+.rg-tab-bar { display: none !important; }

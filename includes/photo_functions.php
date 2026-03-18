@@ -94,4 +94,16 @@ function getSinglePhoto($section) {
 function photoExists($filePath) {
     return file_exists(__DIR__ . '/../' . $filePath);
 }
+
+/**
+ * Get the correct web path for a photo, with optional base prefix
+ * Use $prefix = '../' when calling from a subdirectory (e.g. amenities/)
+ */
+function photoPath($filePath, $prefix = '') {
+    // If already absolute or has a prefix, return as-is
+    if (strpos($filePath, 'http') === 0 || strpos($filePath, '/') === 0) {
+        return $filePath;
+    }
+    return $prefix . $filePath;
+}
 ?>

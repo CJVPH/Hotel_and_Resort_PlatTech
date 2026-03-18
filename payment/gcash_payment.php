@@ -1,44 +1,37 @@
 <?php
 // Only fetch reservation if not already set (when accessed directly)
-if (!isset($reservation) || !isset($reservationId)) {
+if (!isset($reservation)) {
     require_once '../config/database.php';
     require_once '../config/auth.php';
-
-    // Require login
     requireLogin();
-
-    // Get reservation ID
     $reservationId = intval($_GET['reservation_id'] ?? 0);
-
-    if ($reservationId <= 0) {
-        header('Location: ../booking.php?error=Invalid reservation');
-        exit();
-    }
-
-    // Get reservation details
+    $bookingId     = intval($_GET['booking_id'] ?? 0);
+    $isPavilion    = $bookingId > 0;
+    if ($reservationId <= 0 && !$isPavilion) { header('Location: ../booking.php?error=Invalid reservation'); exit(); }
     try {
         $conn = getDBConnection();
-        $stmt = $conn->prepare("SELECT * FROM reservations WHERE id = ? AND user_id = ?");
         $userId = getUserId();
-        $stmt->bind_param("ii", $reservationId, $userId);
+        if ($isPavilion) {
+            $stmt = $conn->prepare("SELECT * FROM pavilion_bookings WHERE id=? AND user_id=?");
+            $stmt->bind_param('ii', $bookingId, $userId);
+        } else {
+            $stmt = $conn->prepare("SELECT * FROM reservations WHERE id=? AND user_id=?");
+            $stmt->bind_param('ii', $reservationId, $userId);
+        }
         $stmt->execute();
         $result = $stmt->get_result();
-        
-        if ($result->num_rows === 0) {
-            header('Location: ../booking.php?error=Reservation not found');
-            exit();
-        }
-        
+        if ($result->num_rows === 0) { header('Location: ../booking.php?error=Reservation not found'); exit(); }
         $reservation = $result->fetch_assoc();
-        $stmt->close();
-        $conn->close();
-        
+        $stmt->close(); $conn->close();
     } catch (Exception $e) {
         error_log("GCash payment page error: " . $e->getMessage());
-        header('Location: ../booking.php?error=Database error');
-        exit();
+        header('Location: ../booking.php?error=Database error'); exit();
     }
 }
+$reservationId = $reservationId ?? 0;
+$bookingId     = $bookingId ?? 0;
+$isPavilion    = $isPavilion ?? ($bookingId > 0);
+$backUrl = $isPavilion ? "payment_method.php?booking_id=$bookingId" : "payment_method.php?reservation_id=$reservationId";
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -57,14 +50,14 @@ if (!isset($reservation) || !isset($reservationId)) {
     <header class="booking-header">
         <div class="header-container">
             <div class="header-left">
-                <a href="payment_method.php?reservation_id=<?php echo $reservationId; ?>" class="back-link">
+                <a href="<?php echo $backUrl; ?>" class="back-link">
                     <i class="fas fa-arrow-left"></i>
                     <span>Back</span>
                 </a>
             </div>
             <div class="header-center">
                 <div class="hotel-logo">
-                    <i class="fas fa-hotel"></i>
+                    <img src="../uploads/logo/logo.png" alt="Paradise Hotel & Resort" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;">
                     <span>Paradise Hotel & Resort</span>
                 </div>
             </div>
@@ -132,7 +125,7 @@ if (!isset($reservation) || !isset($reservationId)) {
 
                 <!-- Upload Proof of Payment -->
                 <form action="process_gcash_payment.php" method="POST" enctype="multipart/form-data">
-                    <input type="hidden" name="reservation_id" value="<?php echo $reservationId; ?>">
+                    <?php if ($isPavilion ?? false): ?><input type="hidden" name="booking_id" value="<?php echo $bookingId; ?>"><?php else: ?><input type="hidden" name="reservation_id" value="<?php echo $reservationId; ?>"><?php endif; ?>
                     
                     <div class="form-section">
                         <h3><i class="fas fa-upload"></i> Upload Proof of Payment</h3>

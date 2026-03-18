@@ -5,44 +5,32 @@ require_once '../config/auth.php';
 // Require admin login
 requireAdminLogin();
 
-$message = '';
-$messageType = '';
-
-// Handle form submission for room price updates
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_price') {
+// Handle AJAX price update
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_price' && !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+    header('Content-Type: application/json');
     $roomType = $_POST['room_type'] ?? '';
     $paxGroup = intval($_POST['pax_group'] ?? 0);
     $price = floatval($_POST['price'] ?? 0);
-    
+
     if (!empty($roomType) && $paxGroup > 0 && $price > 0) {
         try {
             $conn = getDBConnection();
-            
-            // Update or insert room price
             $stmt = $conn->prepare("INSERT INTO room_prices (room_type, pax_group, price) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE price = VALUES(price)");
             $stmt->bind_param("sid", $roomType, $paxGroup, $price);
-            
-            if ($stmt->execute()) {
-                $message = "Room price updated successfully!";
-                $messageType = 'success';
-            } else {
-                $message = "Failed to update room price.";
-                $messageType = 'error';
-            }
-            
-            $stmt->close();
-            $conn->close();
-            
+            $ok = $stmt->execute();
+            $stmt->close(); $conn->close();
+            echo json_encode(['success' => $ok, 'message' => $ok ? 'Price updated successfully!' : 'Failed to update price.']);
         } catch (Exception $e) {
-            error_log("Room price update error: " . $e->getMessage());
-            $message = "Database error occurred.";
-            $messageType = 'error';
+            echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
         }
     } else {
-        $message = "Please fill in all fields with valid values.";
-        $messageType = 'error';
+        echo json_encode(['success' => false, 'message' => 'Please fill in all fields with valid values.']);
     }
+    exit;
 }
+
+$message = '';
+$messageType = '';
 
 // Get current room prices
 $roomPrices = [];
@@ -164,7 +152,8 @@ $currentPage = 'rooms';
                             <p style="color: #ccc; margin: 0.5rem 0 0 0;">Set prices for different room types and guest capacities</p>
                         </div>
                         
-                        <form method="POST" action="">
+                        <div id="priceMsg" style="display:none;padding:.75rem 1rem;border-radius:10px;margin-bottom:1rem;font-weight:600;"></div>
+                        <form id="priceForm">
                             <input type="hidden" name="action" value="update_price">
                             <div class="form-row">
                                 <div class="form-group">
@@ -199,6 +188,36 @@ $currentPage = 'rooms';
                                 </div>
                             </div>
                         </form>
+                        <script>
+                        document.getElementById('priceForm').addEventListener('submit', function(e) {
+                            e.preventDefault();
+                            const fd = new FormData(this);
+                            const msg = document.getElementById('priceMsg');
+                            fetch('rooms.php', {
+                                method: 'POST',
+                                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                                body: fd
+                            })
+                            .then(r => r.json())
+                            .then(data => {
+                                msg.style.display = 'block';
+                                msg.style.background = data.success ? '#d4edda' : '#f8d7da';
+                                msg.style.color = data.success ? '#155724' : '#721c24';
+                                msg.style.border = '1px solid ' + (data.success ? '#c3e6cb' : '#f5c6cb');
+                                msg.textContent = data.message;
+                                if (data.success) {
+                                    this.reset();
+                                    setTimeout(() => { msg.style.display = 'none'; }, 3000);
+                                }
+                            })
+                            .catch(() => {
+                                msg.style.display = 'block';
+                                msg.style.background = '#f8d7da';
+                                msg.style.color = '#721c24';
+                                msg.textContent = 'Request failed. Please try again.';
+                            });
+                        });
+                        </script>
                     </div>
 
                     <!-- Current Room Prices -->

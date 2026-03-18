@@ -16,6 +16,14 @@ if (isLoggedIn()) {
 if (isset($_GET['redirect']) && isset($_GET['reservation_id'])) {
     $redirectUrl = $_GET['redirect'] . '?reservation_id=' . intval($_GET['reservation_id']);
     $_SESSION['redirect_after_login'] = $redirectUrl;
+} elseif (isset($_GET['return'])) {
+    // Handle simple return parameter for booking page
+    $returnPage = $_GET['return'];
+    if ($returnPage === 'booking') {
+        $_SESSION['redirect_after_login'] = 'booking.php';
+    } elseif (in_array($returnPage, ['profile', 'dashboard', 'reservations'])) {
+        $_SESSION['redirect_after_login'] = $returnPage . '.php';
+    }
 }
 
 $error = '';

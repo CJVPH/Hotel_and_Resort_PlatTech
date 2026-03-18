@@ -78,7 +78,7 @@ $halfAmount = $totalAmount / 2;
             </div>
             <div class="header-center">
                 <div class="hotel-logo">
-                    <i class="fas fa-hotel"></i>
+                    <img src="../uploads/logo/logo.png" alt="Paradise Hotel & Resort" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;">
                     <span>Paradise Hotel & Resort</span>
                 </div>
             </div>
@@ -109,7 +109,25 @@ $halfAmount = $totalAmount / 2;
                         </div>
                         <div class="summary-row">
                             <span>Room:</span>
-                            <span><?php echo htmlspecialchars($reservation['room_type']); ?></span>
+                            <?php
+                                $opts = json_decode($reservation['options'] ?? '{}', true);
+                                $roomNum  = $opts['individual_room']['room_number'] ?? '';
+                                $roomTyp  = $opts['individual_room']['room_type']   ?? $reservation['room_type'] ?? '';
+                                $roomName = $opts['individual_room']['room_name']   ?? '';
+                                // Clean up room_type if it's the old full string format
+                                if (strpos($roomTyp, ' - ') !== false) {
+                                    $roomTyp = explode(' - ', $roomTyp)[0];
+                                }
+                                if ($roomNum && $roomTyp) {
+                                    echo '<span>' . htmlspecialchars($roomTyp) . ' Room ' . htmlspecialchars($roomNum) . '</span>';
+                                } elseif ($roomNum) {
+                                    echo '<span>Room ' . htmlspecialchars($roomNum) . '</span>';
+                                } elseif ($roomName) {
+                                    echo '<span>' . htmlspecialchars($roomName) . '</span>';
+                                } else {
+                                    echo '<span>' . htmlspecialchars($roomTyp ?: 'N/A') . '</span>';
+                                }
+                            ?>
                         </div>
                         <div class="summary-row">
                             <span>Check-in:</span>

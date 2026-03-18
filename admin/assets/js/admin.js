@@ -2,6 +2,24 @@
 // Common functionality for admin pages
 
 // ============================================
+// SCROLL POSITION PRESERVATION
+// Saves scroll position before any reload and restores it after
+// ============================================
+(function() {
+    const KEY = 'adminScrollY';
+    // Restore on load
+    const saved = sessionStorage.getItem(KEY);
+    if (saved !== null) {
+        window.scrollTo(0, parseInt(saved, 10));
+        sessionStorage.removeItem(KEY);
+    }
+    // Save before unload (covers location.reload() and form submits)
+    window.addEventListener('beforeunload', function() {
+        sessionStorage.setItem(KEY, window.scrollY);
+    });
+})();
+
+// ============================================
 // ROOMS PAGE - Image Upload & Management
 // ============================================
 
@@ -326,8 +344,13 @@ function handlePhotoUpload(files, section, uploadArea) {
                     statusDiv.textContent = response.message;
                     statusDiv.style.display = 'block';
                     
-                    // Reload page
-                    setTimeout(() => location.reload(), 1500);
+                    // Re-fetch and refresh just this section's photo grid
+                    refreshPhotoGrid(section);
+                    
+                    // Clear file input
+                    uploadArea.querySelector('.file-input').value = '';
+                    
+                    setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
                 } else {
                     statusDiv.className = 'upload-status error';
                     statusDiv.textContent = response.message;
@@ -354,6 +377,31 @@ function handlePhotoUpload(files, section, uploadArea) {
     
     xhr.open('POST', 'upload_photos.php');
     xhr.send(formData);
+}
+
+function refreshPhotoGrid(section) {
+    fetch('get_homepage_settings.php?photos_section=' + section)
+        .then(r => r.json())
+        .then(data => {
+            if (!data.photos) return;
+            const grid = document.getElementById(section + '-photos');
+            if (!grid) return;
+            grid.innerHTML = '';
+            data.photos.forEach(photo => {
+                const div = document.createElement('div');
+                div.className = 'photo-item';
+                div.dataset.photoId = photo.id;
+                div.innerHTML = `
+                    <img src="../${photo.file_path}" alt="${photo.original_name}">
+                    <div class="photo-overlay">
+                        <button class="delete-btn" onclick="deletePhoto(${photo.id}, '${section}')">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>`;
+                grid.appendChild(div);
+            });
+        })
+        .catch(() => {});
 }
 
 function deletePhoto(photoId, section) {

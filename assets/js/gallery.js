@@ -217,4 +217,7 @@
         initLightbox();
     }
     
+    // Expose re-init for tab switching (room-gallery.php)
+    window.initRgLightbox = initLightbox;
+
 })();
