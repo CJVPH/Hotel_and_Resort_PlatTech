@@ -1,17 +1,19 @@
 -- ============================================
 -- PARADISE HOTEL & RESORT DATABASE SETUP
--- Complete Database Schema with All Tables and Data
+-- Paste entire file into phpMyAdmin SQL tab
 -- ============================================
 
-CREATE DATABASE IF NOT EXISTS hotel_reservation;
+SET FOREIGN_KEY_CHECKS = 0;
+
+CREATE DATABASE IF NOT EXISTS hotel_reservation
+    CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE hotel_reservation;
 
--- ============================================
--- MAIN TABLES
--- ============================================
 
--- Users table
-CREATE TABLE IF NOT EXISTS users (
+-- ============================================
+-- USERS
+-- ============================================
+CREATE TABLE users (
     id INT(11) AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
@@ -25,13 +27,11 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Add columns if they don't exist (for existing databases)
-ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20) AFTER full_name;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT AFTER phone;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified TINYINT(1) DEFAULT 0 AFTER is_admin;
 
--- OTP codes table for email verification
-CREATE TABLE IF NOT EXISTS otp_codes (
+-- ============================================
+-- OTP CODES
+-- ============================================
+CREATE TABLE otp_codes (
     id INT(11) AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(100) NOT NULL,
     otp_code VARCHAR(6) NOT NULL,
@@ -43,10 +43,12 @@ CREATE TABLE IF NOT EXISTS otp_codes (
     INDEX idx_expires (expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Reservations table with payment support and guest booking capability
-CREATE TABLE IF NOT EXISTS reservations (
+-- ============================================
+-- RESERVATIONS
+-- ============================================
+CREATE TABLE reservations (
     id INT(11) AUTO_INCREMENT PRIMARY KEY,
-    user_id INT(11) NULL,  -- Allow NULL for guest bookings
+    user_id INT(11) NULL,
     guest_name VARCHAR(100) NOT NULL,
     email VARCHAR(100),
     phone VARCHAR(20),
@@ -63,11 +65,16 @@ CREATE TABLE IF NOT EXISTS reservations (
     payment_reference VARCHAR(100),
     status VARCHAR(20) DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_id (user_id),
+    INDEX idx_checkin_date (checkin_date),
+    INDEX idx_status (status),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Room prices table for admin-controlled pricing
-CREATE TABLE IF NOT EXISTS room_prices (
+-- ============================================
+-- ROOM PRICES
+-- ============================================
+CREATE TABLE room_prices (
     id INT(11) AUTO_INCREMENT PRIMARY KEY,
     room_type VARCHAR(50) NOT NULL,
     pax_group INT(11) NOT NULL,
@@ -77,8 +84,10 @@ CREATE TABLE IF NOT EXISTS room_prices (
     UNIQUE KEY unique_room_pax (room_type, pax_group)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Website photos table for admin photo management
-CREATE TABLE IF NOT EXISTS website_photos (
+-- ============================================
+-- WEBSITE PHOTOS
+-- ============================================
+CREATE TABLE website_photos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     section VARCHAR(50) NOT NULL,
     filename VARCHAR(255) NOT NULL,
@@ -93,8 +102,10 @@ CREATE TABLE IF NOT EXISTS website_photos (
     INDEX idx_active (is_active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Individual room images table (SUPPORTS MULTIPLE IMAGES PER ROOM)
-CREATE TABLE IF NOT EXISTS room_images (
+-- ============================================
+-- ROOM IMAGES
+-- ============================================
+CREATE TABLE room_images (
     id INT AUTO_INCREMENT PRIMARY KEY,
     room_number VARCHAR(10) NOT NULL,
     room_type VARCHAR(50) NOT NULL,
@@ -111,90 +122,97 @@ CREATE TABLE IF NOT EXISTS room_images (
     INDEX idx_room_type (room_type),
     INDEX idx_pax_group (pax_group),
     INDEX idx_active (is_active),
-    INDEX idx_sort_order (sort_order),
     INDEX idx_room_lookup (room_number, room_type, pax_group)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Spa Services table for spa management
-CREATE TABLE IF NOT EXISTS spa_services (
+
+-- ============================================
+-- SPA SERVICES
+-- ============================================
+CREATE TABLE spa_services (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     price DECIMAL(10,2) NOT NULL,
-    duration INT NOT NULL, -- in minutes
+    duration INT NOT NULL,
     image VARCHAR(255) NULL,
-    enabled BOOLEAN DEFAULT TRUE,
+    enabled TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_enabled (enabled),
-    INDEX idx_created_at (created_at)
+    INDEX idx_enabled (enabled)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Restaurant Menu Items table
-CREATE TABLE IF NOT EXISTS restaurant_menu_items (
+-- ============================================
+-- RESTAURANT MENU
+-- ============================================
+CREATE TABLE restaurant_menu_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     category VARCHAR(50) NOT NULL,
     price DECIMAL(10,2) NOT NULL,
-    prep_time INT NOT NULL, -- in minutes
+    prep_time INT NOT NULL,
     image VARCHAR(255) NULL,
-    available BOOLEAN DEFAULT TRUE,
+    available TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_category (category),
-    INDEX idx_available (available),
-    INDEX idx_created_at (created_at)
+    INDEX idx_available (available)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Pavilion Menu table
-CREATE TABLE IF NOT EXISTS pavilion_menu (
+-- ============================================
+-- PAVILION MENU
+-- ============================================
+CREATE TABLE pavilion_menu (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     price DECIMAL(10,2) NOT NULL,
-    prep_time INT NOT NULL, -- in minutes
+    prep_time INT NOT NULL,
     image VARCHAR(255) NULL,
-    available BOOLEAN DEFAULT TRUE,
+    available TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_available (available),
-    INDEX idx_created_at (created_at)
+    INDEX idx_available (available)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Water Activities Menu table
-CREATE TABLE IF NOT EXISTS water_activities_menu (
+-- ============================================
+-- WATER ACTIVITIES
+-- ============================================
+CREATE TABLE water_activities_menu (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     price DECIMAL(10,2) NOT NULL,
-    duration INT NOT NULL, -- in minutes
+    duration INT NOT NULL,
     image VARCHAR(255) NULL,
-    available BOOLEAN DEFAULT TRUE,
+    available TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_available (available),
-    INDEX idx_created_at (created_at)
+    INDEX idx_available (available)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Bar Menu table (for both mini bar and main bar)
-CREATE TABLE IF NOT EXISTS bar_menu (
+-- ============================================
+-- BAR MENU
+-- ============================================
+CREATE TABLE bar_menu (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
-    bar_type ENUM('mini', 'main') NOT NULL,
+    bar_type ENUM('mini','main') NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     image VARCHAR(255) NULL,
-    available BOOLEAN DEFAULT TRUE,
+    available TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_bar_type (bar_type),
-    INDEX idx_available (available),
-    INDEX idx_created_at (created_at)
+    INDEX idx_available (available)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Homepage Settings table for editable content
-CREATE TABLE IF NOT EXISTS homepage_settings (
+-- ============================================
+-- HOMEPAGE SETTINGS
+-- ============================================
+CREATE TABLE homepage_settings (
     id INT AUTO_INCREMENT PRIMARY KEY,
     setting_key VARCHAR(100) UNIQUE NOT NULL,
     setting_value TEXT NOT NULL,
@@ -203,105 +221,21 @@ CREATE TABLE IF NOT EXISTS homepage_settings (
     INDEX idx_setting_key (setting_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Insert default homepage settings
-INSERT INTO homepage_settings (setting_key, setting_value, setting_type) VALUES
-('site_title', 'Paradise Hotel & Resort', 'text'),
-('site_tagline', 'Experience luxury, comfort, and unforgettable memories', 'text'),
-('hero_title', 'Welcome to Paradise Hotel & Resort', 'text'),
-('hero_subtitle', 'Experience luxury, comfort, and unforgettable memories', 'text'),
-('about_title', 'About Paradise Hotel & Resort', 'text'),
-('about_description', 'Welcome to Paradise Hotel & Resort, where luxury meets comfort. Our world-class facilities and exceptional service ensure an unforgettable stay.', 'textarea'),
-('contact_phone', '+1 (555) 123-4567', 'text'),
-('contact_email', 'info@paradisehotel.com', 'text'),
-('contact_address', '123 Paradise Lane, Resort City', 'text'),
-('google_maps_embed', 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3861.4447!2d121.0244!3d14.5995!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTTCsDM1JzU4LjIiTiAxMjHCsDAxJzI3LjgiRQ!5e0!3m2!1sen!2sph!4v1234567890', 'text'),
-('feature_1_icon', 'fas fa-star', 'text'),
-('feature_1_text', '5 Star Luxury', 'text'),
-('feature_2_icon', 'fas fa-wifi', 'text'),
-('feature_2_text', 'Free WIFI', 'text'),
-('feature_3_icon', 'fas fa-parking', 'text'),
-('feature_3_text', 'Free Parking', 'text')
-ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value);
-
 -- ============================================
--- DEFAULT DATA
+-- SITE SETTINGS (general key-value store)
 -- ============================================
-
--- Insert default room prices
-INSERT INTO room_prices (room_type, pax_group, price) VALUES
-('Regular', 2, 1500.00),
-('Regular', 8, 3000.00),
-('Regular', 20, 6000.00),
-('Deluxe', 2, 2500.00),
-('Deluxe', 8, 4500.00),
-('Deluxe', 20, 8500.00),
-('VIP', 2, 4000.00),
-('VIP', 8, 7000.00),
-('VIP', 20, 12000.00)
-ON DUPLICATE KEY UPDATE price=VALUES(price);
-
--- Insert default admin account
--- Username: admin, Password: admin123, Email: admin@paradisehotel.com
-INSERT INTO users (username, email, password, full_name, is_admin) 
-VALUES ('admin', 'admin@paradisehotel.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Administrator', 1)
-ON DUPLICATE KEY UPDATE 
-password = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
-is_admin = 1;
-
--- admin back up
--- Username: admin2
--- Password: password
-
-INSERT INTO users (username, email, password, full_name, is_admin)
-VALUES ('admin2','admin2@paradisehotel.com','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi','System Administrator',1);
-
--- ============================================
--- PERFORMANCE INDEXES
--- ============================================
-
--- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_user_id ON reservations(user_id);
-CREATE INDEX IF NOT EXISTS idx_checkin_date ON reservations(checkin_date);
-CREATE INDEX IF NOT EXISTS idx_status ON reservations(status);
-
--- ============================================
--- TROUBLESHOOTING SECTION
--- ============================================
-
--- Guest Booking Support: Allow NULL user_id for guest reservations
--- This allows users to book without logging in, login is only required for payment
-ALTER TABLE reservations MODIFY COLUMN user_id INT(11) NULL;
-
--- Update foreign key constraint to handle NULL properly (if it exists)
--- Note: This may fail if constraint doesn't exist, which is fine
-SET @constraint_name = (
-    SELECT CONSTRAINT_NAME 
-    FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE 
-    WHERE TABLE_SCHEMA = 'hotel_reservation' 
-    AND TABLE_NAME = 'reservations' 
-    AND REFERENCED_TABLE_NAME = 'users'
-    LIMIT 1
-);
-
-SET @sql = IF(@constraint_name IS NOT NULL, 
-    CONCAT('ALTER TABLE reservations DROP FOREIGN KEY ', @constraint_name), 
-    'SELECT "No foreign key to drop" as message'
-);
-PREPARE stmt FROM @sql;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
-
--- Add foreign key constraint with proper NULL handling
-ALTER TABLE reservations ADD CONSTRAINT fk_reservations_user_id 
-FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL;
+CREATE TABLE site_settings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    setting_key VARCHAR(100) UNIQUE NOT NULL,
+    setting_value TEXT NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
 -- ============================================
--- PAVILION AVAILABILITY & BOOKINGS
+-- PAVILION SLOTS
 -- ============================================
-
--- Pavilion availability slots (admin sets which dates are open, max pax, price)
-CREATE TABLE IF NOT EXISTS pavilion_slots (
+CREATE TABLE pavilion_slots (
     id INT AUTO_INCREMENT PRIMARY KEY,
     event_date DATE NOT NULL UNIQUE,
     max_pax INT NOT NULL DEFAULT 0,
@@ -314,10 +248,14 @@ CREATE TABLE IF NOT EXISTS pavilion_slots (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Pavilion event bookings
-CREATE TABLE IF NOT EXISTS pavilion_bookings (
+-- ============================================
+-- PAVILION BOOKINGS
+-- ============================================
+CREATE TABLE pavilion_bookings (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    slot_id INT NOT NULL,
+    slot_id INT NULL DEFAULT NULL,
+    event_date DATE NULL,
+    checkout_date DATE NULL,
     user_id INT(11) NULL,
     guest_name VARCHAR(100) NOT NULL,
     email VARCHAR(100),
@@ -325,7 +263,9 @@ CREATE TABLE IF NOT EXISTS pavilion_bookings (
     pax INT NOT NULL DEFAULT 1,
     event_type VARCHAR(100) DEFAULT '',
     event_time VARCHAR(20) DEFAULT '',
+    event_end_time VARCHAR(20) DEFAULT '',
     special_requests TEXT DEFAULT NULL,
+    buffet_items TEXT DEFAULT NULL,
     price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     status ENUM('pending','confirmed','cancelled') NOT NULL DEFAULT 'pending',
     payment_status VARCHAR(20) DEFAULT 'pending',
@@ -341,77 +281,68 @@ CREATE TABLE IF NOT EXISTS pavilion_bookings (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ============================================
--- MIGRATION: Add payment columns to pavilion_bookings if upgrading
+-- PAVILION EVENT PRICES
 -- ============================================
-ALTER TABLE pavilion_bookings
-    MODIFY COLUMN status ENUM('pending','confirmed','cancelled') NOT NULL DEFAULT 'pending',
-    ADD COLUMN IF NOT EXISTS user_id INT(11) NULL AFTER slot_id,
-    ADD COLUMN IF NOT EXISTS payment_status VARCHAR(20) DEFAULT 'pending' AFTER status,
-    ADD COLUMN IF NOT EXISTS payment_amount DECIMAL(10,2) DEFAULT 0.00 AFTER payment_status,
-    ADD COLUMN IF NOT EXISTS payment_percentage INT DEFAULT 0 AFTER payment_amount,
-    ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50) AFTER payment_percentage,
-    ADD COLUMN IF NOT EXISTS payment_reference VARCHAR(100) AFTER payment_method;
-
--- MIGRATION: Add event_time and special_requests to pavilion_bookings
-ALTER TABLE pavilion_bookings
-    ADD COLUMN IF NOT EXISTS event_time VARCHAR(20) DEFAULT '' AFTER event_type,
-    ADD COLUMN IF NOT EXISTS special_requests TEXT DEFAULT NULL AFTER event_time;
-
--- MIGRATION: Add end time and buffet columns
-ALTER TABLE pavilion_bookings
-    ADD COLUMN IF NOT EXISTS event_end_time VARCHAR(20) DEFAULT '' AFTER event_time,
-    ADD COLUMN IF NOT EXISTS buffet_items TEXT DEFAULT NULL AFTER special_requests,
-    ADD COLUMN IF NOT EXISTS checkout_date DATE NULL AFTER event_date;
-
--- Default buffet menu items for pavilion
-INSERT INTO pavilion_menu (name, description, price, prep_time, available) VALUES
-('Lechon de Leche',    'Whole roasted suckling pig, crispy skin',               850.00, 240, 1),
-('Seafood Platter',    'Grilled fish, shrimp, squid, and crab',                 450.00,  60, 1),
-('Beef Caldereta',     'Slow-cooked beef in rich tomato sauce',                 320.00,  90, 1),
-('Chicken Inasal',     'Grilled marinated chicken, garlic rice',                280.00,  45, 1),
-('Pancit Palabok',     'Rice noodles with shrimp sauce and toppings',           180.00,  30, 1),
-('Vegetable Kare-Kare','Mixed vegetables in peanut sauce with bagoong',         150.00,  45, 1),
-('Dessert Table',      'Leche flan, buko pandan, fruit salad, halo-halo',       250.00,  30, 1)
-ON DUPLICATE KEY UPDATE name=VALUES(name);
-
--- ============================================
--- MIGRATION: New pavilion model — all dates available, admin blocks specific dates
--- pavilion_bookings now stores event_date directly (slot_id becomes optional)
--- ============================================
-ALTER TABLE pavilion_bookings
-    ADD COLUMN IF NOT EXISTS event_date DATE NULL AFTER slot_id;
-
--- Backfill event_date from slot if exists
-UPDATE pavilion_bookings pb
-    JOIN pavilion_slots ps ON pb.slot_id = ps.id
-    SET pb.event_date = ps.event_date
-    WHERE pb.event_date IS NULL;
-
--- Add pavilion_price to site_settings if not present
-INSERT IGNORE INTO site_settings (setting_key, setting_value) VALUES ('pavilion_price', '5000');
-
--- ============================================
--- MIGRATION: Make slot_id optional (new model uses event_date directly)
--- ============================================
-ALTER TABLE pavilion_bookings
-    MODIFY COLUMN slot_id INT NULL DEFAULT NULL;
-
--- ============================================
--- PAVILION DYNAMIC PRICING
--- ============================================
-CREATE TABLE IF NOT EXISTS pavilion_event_prices (
+CREATE TABLE pavilion_event_prices (
     id INT AUTO_INCREMENT PRIMARY KEY,
     event_type VARCHAR(100) NOT NULL UNIQUE,
     base_price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+
+-- ============================================
+-- DEFAULT DATA
+-- ============================================
+
+-- Admin accounts
+-- admin  / password: password
+-- admin2 / password: password
+INSERT INTO users (username, email, password, full_name, is_admin) VALUES
+('admin',  'admin@paradisehotel.com',  '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Administrator',      1),
+('admin2', 'admin2@paradisehotel.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'System Administrator', 1);
+
+-- Room prices
+INSERT INTO room_prices (room_type, pax_group, price) VALUES
+('Regular', 2,  1500.00),
+('Regular', 8,  3000.00),
+('Regular', 20, 6000.00),
+('Deluxe',  2,  2500.00),
+('Deluxe',  8,  4500.00),
+('Deluxe',  20, 8500.00),
+('VIP',     2,  4000.00),
+('VIP',     8,  7000.00),
+('VIP',     20, 12000.00);
+
+-- Homepage settings
+INSERT INTO homepage_settings (setting_key, setting_value, setting_type) VALUES
+('site_title',        'Paradise Hotel & Resort',                                                                    'text'),
+('site_tagline',      'Experience luxury, comfort, and unforgettable memories',                                     'text'),
+('hero_title',        'Welcome to Paradise Hotel & Resort',                                                         'text'),
+('hero_subtitle',     'Experience luxury, comfort, and unforgettable memories',                                     'text'),
+('about_title',       'About Paradise Hotel & Resort',                                                              'text'),
+('about_description', 'Welcome to Paradise Hotel & Resort, where luxury meets comfort.',                            'textarea'),
+('contact_phone',     '+1 (555) 123-4567',                                                                         'text'),
+('contact_email',     'info@paradisehotel.com',                                                                    'text'),
+('contact_address',   '123 Paradise Lane, Resort City',                                                            'text'),
+('google_maps_embed', 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3861.4447!2d121.0244!3d14.5995',     'text'),
+('feature_1_icon',    'fas fa-star',                                                                               'text'),
+('feature_1_text',    '5 Star Luxury',                                                                             'text'),
+('feature_2_icon',    'fas fa-wifi',                                                                               'text'),
+('feature_2_text',    'Free WIFI',                                                                                 'text'),
+('feature_3_icon',    'fas fa-parking',                                                                            'text'),
+('feature_3_text',    'Free Parking',                                                                              'text');
+
+-- Site settings
+INSERT INTO site_settings (setting_key, setting_value) VALUES
+('pavilion_price', '5000');
+
+-- Pavilion event prices
 INSERT INTO pavilion_event_prices (event_type, base_price) VALUES
-('Wedding',          50000.00),
-('Corporate Event',  40000.00),
-('Anniversary',      25000.00),
-('Family Reunion',   25000.00),
-('Birthday Party',   15000.00),
-('Graduation',       15000.00),
-('Other',            15000.00)
-ON DUPLICATE KEY UPDATE base_price = VALUES(base_price);
+('Wedding',         50000.00),
+('Corporate Event', 40000.00),
+('Anniversary',     25000.00),
+('Family Reunion',  25000.00),
+('Birthday Party',  15000.00),
+('Graduation',      15000.00),
+('Other',           15000.00);
