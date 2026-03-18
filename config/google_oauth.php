@@ -9,23 +9,7 @@ class GoogleOAuth {
         // Google OAuth credentials
         $this->client_id = '829858353753-5er1pes529q7rugedqvrpjfgekqmf5c5.apps.googleusercontent.com';
         $this->client_secret = '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';
-        // Build redirect URI dynamically to handle subdirectories
-        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-        $host = $_SERVER['HTTP_HOST'];
-        
-        // Get the project directory from the config file path
-        $configDir = dirname(__FILE__); // /path/to/Hotel_and_Resort/config
-        $projectDir = dirname($configDir); // /path/to/Hotel_and_Resort
-        
-        // Get relative path from document root
-        $docRoot = rtrim($_SERVER['DOCUMENT_ROOT'], '/');
-        $relativePath = str_replace(str_replace('/', '\\', $docRoot), '', str_replace('/', '\\', $projectDir));
-        $relativePath = str_replace('\\', '/', $relativePath);
-        
-        // Remove trailing slash if present
-        $relativePath = rtrim($relativePath, '/');
-        
-        $this->redirect_uri = $protocol . '://' . $host . $relativePath . '/redirect.php';
+        $this->redirect_uri = 'http://localhost/Hotel_and_Resort/redirect.php';
     }
     
     public function getAuthUrl() {
