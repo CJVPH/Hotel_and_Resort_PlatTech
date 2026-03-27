@@ -76,6 +76,13 @@ $backUrl = $isPavilion ? "payment_method.php?booking_id=$bookingId" : "payment_m
                 <div class="booking-header">
                     <h1><i class="fas fa-store"></i> Over the Counter Payment</h1>
                     <p>Pay at 7-Eleven, SM, or other partner stores</p>
+                    <div style="margin-top:0.75rem;display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;">
+                        <img src="../uploads/payment-icons/711.png" alt="7-Eleven" style="height:36px;object-fit:contain;">
+                        <img src="../uploads/payment-icons/SM.png" alt="SM" style="height:36px;object-fit:contain;">
+                        <img src="../uploads/payment-icons/mlhuillier.png" alt="MLhuillier" style="height:36px;object-fit:contain;">
+                        <img src="../uploads/payment-icons/cebuana.png" alt="Cebuana" style="height:36px;object-fit:contain;">
+                        <img src="../uploads/payment-icons/Palawan.png" alt="Palawan Express" style="height:36px;object-fit:contain;">
+                    </div>
                 </div>
 
                 <!-- Payment Amount -->
@@ -105,7 +112,7 @@ $backUrl = $isPavilion ? "payment_method.php?booking_id=$bookingId" : "payment_m
                     <div class="partner-stores">
                         <div class="store-card">
                             <div class="store-icon">
-                                <i class="fas fa-store"></i>
+                                <img src="../uploads/payment-icons/711.png" alt="7-Eleven">
                             </div>
                             <h4>7-Eleven</h4>
                             <p>Available at all branches nationwide</p>
@@ -113,7 +120,7 @@ $backUrl = $isPavilion ? "payment_method.php?booking_id=$bookingId" : "payment_m
 
                         <div class="store-card">
                             <div class="store-icon">
-                                <i class="fas fa-shopping-bag"></i>
+                                <img src="../uploads/payment-icons/SM.png" alt="SM Bills Payment">
                             </div>
                             <h4>SM Bills Payment</h4>
                             <p>Available at SM Department Stores</p>
@@ -121,7 +128,7 @@ $backUrl = $isPavilion ? "payment_method.php?booking_id=$bookingId" : "payment_m
 
                         <div class="store-card">
                             <div class="store-icon">
-                                <i class="fas fa-cash-register"></i>
+                                <img src="../uploads/payment-icons/BayadCenter.png" alt="Bayad Center">
                             </div>
                             <h4>Bayad Center</h4>
                             <p>Available at partner locations</p>
@@ -129,7 +136,7 @@ $backUrl = $isPavilion ? "payment_method.php?booking_id=$bookingId" : "payment_m
 
                         <div class="store-card">
                             <div class="store-icon">
-                                <i class="fas fa-money-check-alt"></i>
+                                <img src="../uploads/payment-icons/cebuana.png" alt="Cebuana Lhuillier">
                             </div>
                             <h4>Cebuana Lhuillier</h4>
                             <p>Available at all branches</p>
@@ -137,7 +144,7 @@ $backUrl = $isPavilion ? "payment_method.php?booking_id=$bookingId" : "payment_m
 
                         <div class="store-card">
                             <div class="store-icon">
-                                <i class="fas fa-building"></i>
+                                <img src="../uploads/payment-icons/mlhuillier.png" alt="M Lhuillier">
                             </div>
                             <h4>M Lhuillier</h4>
                             <p>Available at all branches</p>
@@ -145,7 +152,7 @@ $backUrl = $isPavilion ? "payment_method.php?booking_id=$bookingId" : "payment_m
 
                         <div class="store-card">
                             <div class="store-icon">
-                                <i class="fas fa-store-alt"></i>
+                                <img src="../uploads/payment-icons/Palawan.png" alt="Palawan Pawnshop">
                             </div>
                             <h4>Palawan Pawnshop</h4>
                             <p>Available at all branches</p>

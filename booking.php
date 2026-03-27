@@ -190,6 +190,20 @@ $carouselPhotos = getPhotosWithFallback('carousel', 5);
     </header>
 
     <div class="booking-container">
+        <?php if (!empty($_GET['error'])): ?>
+        <div id="bookingErrorBanner" style="background:#f8d7da;color:#721c24;border:1.5px solid #f5c6cb;border-radius:10px;padding:1rem 1.5rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:.75rem;font-weight:600;">
+            <i class="fas fa-exclamation-circle" style="font-size:1.2rem;flex-shrink:0;"></i>
+            <span><?php echo htmlspecialchars($_GET['error']); ?></span>
+        </div>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('bookingErrorBanner')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            <?php if (!empty($_GET['tab'])): ?>
+            switchTab('<?php echo htmlspecialchars($_GET['tab']); ?>');
+            <?php endif; ?>
+        });
+        </script>
+        <?php endif; ?>
         <!-- Tab Switcher -->
         <div class="booking-tabs">
             <button class="bk-tab active" id="tabRoom" onclick="switchTab('room')">
@@ -232,6 +246,7 @@ $carouselPhotos = getPhotosWithFallback('carousel', 5);
             </div>
 
             <div style="padding:1.5rem 1.5rem 1.25rem;">
+            <form id="bookingForm" action="process.php" method="POST">
 
             <!-- Step 1: Guest Info -->
             <div class="pv-step" id="rmStep1">
@@ -240,7 +255,6 @@ $carouselPhotos = getPhotosWithFallback('carousel', 5);
                 <!-- Hidden data to pass login status to JS -->
                 <input type="hidden" id="isUserLoggedIn" value="<?php echo isLoggedIn() ? '1' : '0'; ?>">
                 <input type="hidden" id="preselectedRoomType" value="<?php echo htmlspecialchars($preselectedRoomType); ?>">
-                <form id="bookingForm" action="process.php" method="POST">
                 <div class="form-row" style="margin-top:1.25rem;">
                     <div class="form-group">
                         <label for="name">Full Name <span class="req">*</span></label>
@@ -285,7 +299,6 @@ $carouselPhotos = getPhotosWithFallback('carousel', 5);
                 <input type="hidden" id="nights"   name="nights">
                 <input type="hidden" id="checkin"  name="checkin">
                 <input type="hidden" id="checkout" name="checkout">
-                </form>
             </div>
 
             <!-- Step 2: Room Selection -->
@@ -384,7 +397,7 @@ $carouselPhotos = getPhotosWithFallback('carousel', 5);
                     <button type="button" class="pv-btn-back" onclick="rmGoStep(3)">
                         <i class="fas fa-arrow-left"></i> Back
                     </button>
-                    <button type="submit" form="bookingForm" class="btn-submit" id="submitBtn" style="flex:1;max-width:260px;">
+                    <button type="submit" class="btn-submit" id="submitBtn" style="flex:1;max-width:260px;">
                         <i class="fas fa-credit-card"></i> Confirm & Pay
                     </button>
                 </div>
@@ -394,6 +407,7 @@ $carouselPhotos = getPhotosWithFallback('carousel', 5);
             </div>
 
             </div><!-- /padding wrapper -->
+            </form>
         </div><!-- /booking-card -->
         </div><!-- /booking-form-section -->
 

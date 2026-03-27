@@ -76,6 +76,10 @@ $backUrl = $isPavilion ? "payment_method.php?booking_id=$bookingId" : "payment_m
                 <div class="booking-header">
                     <h1><i class="fas fa-university"></i> Bank Transfer</h1>
                     <p>Transfer payment directly to our bank account</p>
+                    <div style="margin-top:0.75rem;display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;">
+                        <img src="../uploads/payment-icons/BDO.png" alt="BDO" style="height:32px;object-fit:contain;">
+                        <img src="../uploads/payment-icons/BPI.png" alt="BPI" style="height:32px;object-fit:contain;">
+                    </div>
                 </div>
 
                 <!-- Payment Amount -->

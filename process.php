@@ -7,6 +7,26 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
+// Detect if called via fetch (JS) or direct form POST
+$isFetch = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) || 
+           (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false) ||
+           !empty($_POST['_fetch']);
+
+function sendResponse($success, $redirect, $message = '') {
+    global $isFetch;
+    if ($isFetch) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => $success, 'redirect' => $redirect, 'message' => $message]);
+        exit();
+    } else {
+        header('Location: ' . $redirect);
+        exit();
+    }
+}
+
+// Debug: log all POST data
+error_log('[process.php POST] ' . json_encode($_POST));
+
 // Get form data
 $name = trim($_POST['name'] ?? '');
 $email = trim($_POST['email'] ?? '');
@@ -52,15 +72,9 @@ if ($price <= 0) {
 
 // Validate dates
 if (!empty($checkin) && !empty($checkout)) {
-    $checkinDate = new DateTime($checkin);
+    $checkinDate  = new DateTime($checkin);
     $checkoutDate = new DateTime($checkout);
-    $today = new DateTime();
-    $today->setTime(0, 0, 0);
-    
-    if ($checkinDate < $today) {
-        $errors[] = 'Check-in date cannot be in the past';
-    }
-    
+
     if ($checkoutDate <= $checkinDate) {
         $errors[] = 'Check-out date must be after check-in date';
     }
@@ -68,9 +82,8 @@ if (!empty($checkin) && !empty($checkout)) {
 
 // If there are errors, redirect back with error message
 if (!empty($errors)) {
-    $errorMessage = implode(', ', $errors);
-    header('Location: booking.php?error=' . urlencode($errorMessage));
-    exit();
+    $errorMessage = implode(' | ', $errors);
+    sendResponse(false, 'booking.php?error=' . urlencode($errorMessage) . '&tab=room', $errorMessage);
 }
 
 try {
@@ -119,10 +132,8 @@ try {
         if ($cResult->num_rows > 0) {
             $cStmt->close();
             $conn->close();
-            header('Location: booking.php?error=' . urlencode(
-                "Room {$roomNumber} is already booked for the selected dates. Please choose different dates or another room."
-            ));
-            exit();
+            $msg = "Room {$roomNumber} is already booked for the selected dates. Please choose different dates or another room.";
+            sendResponse(false, 'booking.php?error=' . urlencode($msg) . '&tab=room', $msg);
         }
         $cStmt->close();
     }
@@ -144,16 +155,13 @@ try {
         $reservationId = $conn->insert_id;
         $stmt->close();
         $conn->close();
-
-        header('Location: payment/payment.php?reservation_id=' . $reservationId);
-        exit();
+        sendResponse(true, 'payment/payment.php?reservation_id=' . $reservationId);
     } else {
         throw new Exception("Database execution failed: " . $stmt->error);
     }
 
 } catch (Exception $e) {
     error_log("Booking process error: " . $e->getMessage());
-    header('Location: booking.php?error=Database error, please try again');
-    exit();
+    sendResponse(false, 'booking.php?error=' . urlencode('Database error: ' . $e->getMessage()) . '&tab=room', $e->getMessage());
 }
 ?>

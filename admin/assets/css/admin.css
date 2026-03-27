@@ -114,6 +114,7 @@
     overflow-y: auto;
     box-shadow: 2px 0 20px rgba(0, 0, 0, 0.1);
     border-right: 1px solid rgba(201, 169, 97, 0.2);
+    transition: transform 0.3s ease;
 }
 
 .sidebar-content {
@@ -641,7 +642,6 @@
 @media (max-width: 768px) {
     .admin-sidebar {
         transform: translateX(-100%);
-        transition: transform 0.3s ease;
     }
     
     .admin-content {

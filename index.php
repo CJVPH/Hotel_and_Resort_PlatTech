@@ -206,14 +206,11 @@ try {
                         <i class="fas fa-chevron-down"></i>
                     </a>
                     <div class="dropdown-menu">
-                        <a href="#about" class="dropdown-item">
+                        <a href="about.php" class="dropdown-item">
                             <i class="fas fa-hotel"></i> About Us
                         </a>
                         <a href="javascript:void(0)" class="dropdown-item" onclick="toggleFloat('faq-float')">
                             <i class="fas fa-question-circle"></i> FAQ
-                        </a>
-                        <a href="javascript:void(0)" class="dropdown-item" onclick="toggleFloat('dev-float')">
-                            <i class="fas fa-code"></i> About the Developer
                         </a>
                     </div>
                 </div>
@@ -512,99 +509,6 @@ try {
             </div>
         </section>
 
-        <!-- About Us Section -->
-        <section id="about" class="section">
-            <div class="container">
-                <div class="section-header">
-                    <h2 class="section-title">About Paradise Hotel & Resort</h2>
-                    <p class="section-subtitle">
-                        Nestled along the pristine shores of Nasugbu, Batangas where the sea meets serenity
-                    </p>
-                </div>
-
-                <!-- Story + Mission -->
-                <div class="about-story-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;margin-bottom:4rem;">
-                    <div>
-                        <h3 style="font-size:1.8rem;font-weight:700;color:#C9A961;margin-bottom:1rem;">Our Story</h3>
-                        <p style="color:#e8e8e8;line-height:1.9;margin-bottom:1rem;">
-                            Paradise Hotel & Resort was founded with a single vision to create a sanctuary where every guest feels at home while experiencing the finest in Filipino hospitality. Situated in the coastal barangay of Calayo, Nasugbu, Batangas, our resort was built to celebrate the natural beauty of the West Philippine Sea.
-                        </p>
-                        <p style="color:#e8e8e8;line-height:1.9;margin-bottom:1rem;">
-                            From our humble beginnings as a family-owned retreat, we have grown into a full-service resort offering world-class accommodations, event venues, dining, spa, and water activities all while staying true to our roots of warm, personal service.
-                        </p>
-                        <p style="color:#e8e8e8;line-height:1.9;">
-                            Every corner of our property is designed to reflect the culture, warmth, and natural splendor of Batangas a place where memories are made and guests always return.
-                        </p>
-                    </div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
-                        <div style="background:linear-gradient(135deg,#2C3E50,#34495E);border-radius:16px;padding:2rem;text-align:center;color:white;">
-                            <div style="font-size:2.5rem;font-weight:800;color:#C9A961;">10+</div>
-                            <div style="font-size:0.95rem;margin-top:0.4rem;opacity:0.85;">Years of Excellence</div>
-                        </div>
-                        <div style="background:linear-gradient(135deg,#2C3E50,#34495E);border-radius:16px;padding:2rem;text-align:center;color:white;">
-                            <div style="font-size:2.5rem;font-weight:800;color:#C9A961;">5,000+</div>
-                            <div style="font-size:0.95rem;margin-top:0.4rem;opacity:0.85;">Happy Guests</div>
-                        </div>
-                        <div style="background:linear-gradient(135deg,#2C3E50,#34495E);border-radius:16px;padding:2rem;text-align:center;color:white;">
-                            <div style="font-size:2.5rem;font-weight:800;color:#C9A961;">30+</div>
-                            <div style="font-size:0.95rem;margin-top:0.4rem;opacity:0.85;">Room Options</div>
-                        </div>
-                        <div style="background:linear-gradient(135deg,#2C3E50,#34495E);border-radius:16px;padding:2rem;text-align:center;color:white;">
-                            <div style="font-size:2.5rem;font-weight:800;color:#C9A961;">100%</div>
-                            <div style="font-size:0.95rem;margin-top:0.4rem;opacity:0.85;">Filipino Hospitality</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Values -->
-                <div class="about-values-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;margin-bottom:4rem;">
-                    <div style="background:white;border-radius:16px;padding:2rem;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
-                        <i class="fas fa-heart" style="font-size:2rem;color:#C9A961;margin-bottom:1rem;display:block;"></i>
-                        <h4 style="color:#2C3E50;font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">Genuine Hospitality</h4>
-                        <p style="color:#666;font-size:0.95rem;line-height:1.7;">We treat every guest like family. Our staff goes beyond service they create connections that make you feel truly welcome.</p>
-                    </div>
-                    <div style="background:white;border-radius:16px;padding:2rem;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
-                        <i class="fas fa-leaf" style="font-size:2rem;color:#C9A961;margin-bottom:1rem;display:block;"></i>
-                        <h4 style="color:#2C3E50;font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">Nature & Sustainability</h4>
-                        <p style="color:#666;font-size:0.95rem;line-height:1.7;">We are committed to preserving the natural beauty of Nasugbu through eco-conscious practices and responsible resort management.</p>
-                    </div>
-                    <div style="background:white;border-radius:16px;padding:2rem;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
-                        <i class="fas fa-gem" style="font-size:2rem;color:#C9A961;margin-bottom:1rem;display:block;"></i>
-                        <h4 style="color:#2C3E50;font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">Uncompromising Quality</h4>
-                        <p style="color:#666;font-size:0.95rem;line-height:1.7;">From our rooms to our restaurant, every detail is curated to deliver an experience that exceeds expectations every single time.</p>
-                    </div>
-                </div>
-
-                <!-- Contact Info Cards -->
-                <div class="contact-info">
-                    <div class="contact-item">
-                        <i class="fas fa-phone"></i>
-                        <h4>Phone</h4>
-                        <p>+63 (917) 123-4567</p>
-                    </div>
-                    <div class="contact-item">
-                        <i class="fas fa-envelope"></i>
-                        <h4>Email</h4>
-                        <p>info@paradisehotel.com</p>
-                    </div>
-                    <div class="contact-item">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <h4>Address</h4>
-                        <p>Calayo, Nasugbu, Batangas, Philippines</p>
-                    </div>
-                </div>
-
-                <!-- Google Map -->
-                <div class="map-container" style="margin-top: 3rem;">
-                    <iframe 
-                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15534.234567890123!2d120.6234567!3d13.9876543!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd6f5e5e5e5e5e%3A0x5e5e5e5e5e5e5e5e!2sCalayo%2C%20Nasugbu%2C%20Batangas%2C%20Philippines!5e0!3m2!1sen!2sph!4v1707567890123!5m2!1sen!2sph"
-                        allowfullscreen="" 
-                        loading="lazy" 
-                        referrerpolicy="no-referrer-when-downgrade">
-                    </iframe>
-                </div>
-            </div>
-        </section>
     </main>
 
     <!-- Footer -->
@@ -628,6 +532,16 @@ try {
                     <p><a href="#restaurant">Fine Dining</a></p>
                     <p><a href="<?php echo isLoggedIn() ? 'booking.php' : 'login.php'; ?>">Book Now</a></p>
                 </div>
+            </div>
+
+            <!-- Map inside footer -->
+            <div style="margin:2rem 0;border-radius:12px;overflow:hidden;border:2px solid rgba(201,169,97,0.3);">
+                <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15534.234567890123!2d120.6234567!3d13.9876543!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd6f5e5e5e5e5e%3A0x5e5e5e5e5e5e5e5e!2sCalayo%2C%20Nasugbu%2C%20Batangas%2C%20Philippines!5e0!3m2!1sen!2sph!4v1707567890123!5m2!1sen!2sph"
+                    width="100%" height="300" style="display:block;border:0;"
+                    allowfullscreen="" loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
             </div>
             <div class="footer-bottom">
                 <p>&copy; <?php echo date('Y'); ?> Paradise Hotel & Resort. All rights reserved.</p>
@@ -698,28 +612,5 @@ try {
     </div>
 
     <!-- Floating Developer Panel -->
-    <div id="dev-float" class="float-panel">
-        <div class="float-panel-header">
-            <h3><i class="fas fa-code"></i> About the Developer</h3>
-            <button onclick="toggleFloat('dev-float')"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="float-panel-body">
-            <div class="developer-card" style="border:none;padding:0;background:none;">
-                <div class="developer-avatar"><i class="fas fa-user-circle"></i></div>
-                <div class="developer-info">
-                    <h3>PlatTech Solutions</h3>
-                    <p class="developer-role"><i class="fas fa-laptop-code"></i> Full-Stack Web Development</p>
-                    <p class="developer-desc">This hotel reservation and management system was designed and developed as a capstone project using PHP, MySQL, and modern web technologies covering online booking, payment processing, and full admin management.</p>
-                    <div class="developer-stack">
-                        <span><i class="fab fa-php"></i> PHP</span>
-                        <span><i class="fas fa-database"></i> MySQL</span>
-                        <span><i class="fab fa-js"></i> JavaScript</span>
-                        <span><i class="fab fa-css3-alt"></i> CSS3</span>
-                        <span><i class="fab fa-html5"></i> HTML5</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </body>
 </html>

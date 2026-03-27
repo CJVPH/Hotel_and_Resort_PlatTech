@@ -285,6 +285,7 @@ body {
 
 .hero-carousel {
     height: 100vh;
+    height: 100dvh;
     position: relative;
     overflow: hidden;
 }
@@ -320,7 +321,7 @@ body {
 }
 
 .carousel-content h1 {
-    font-size: 4rem;
+    font-size: clamp(1.8rem, 5vw, 4rem);
     font-weight: 700;
     margin-bottom: 1rem;
     background: linear-gradient(135deg, #C9A961 0%, #8B7355 100%);
@@ -330,7 +331,7 @@ body {
 }
 
 .carousel-content p {
-    font-size: 1.5rem;
+    font-size: clamp(1rem, 2.5vw, 1.5rem);
     margin-bottom: 2rem;
     opacity: 0.9;
 }
@@ -441,7 +442,7 @@ body {
 }
 
 .section-title {
-    font-size: 3rem;
+    font-size: clamp(1.6rem, 4vw, 3rem);
     font-weight: 700;
     color: #2C3E50;
     margin-bottom: 1rem;
@@ -481,7 +482,7 @@ body {
 
 .photo-gallery {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
     gap: 2rem;
     margin-bottom: 3rem;
 }
@@ -543,7 +544,7 @@ body {
 
 .testimonials {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(350px, 100%), 1fr));
     gap: 2rem;
 }
 
@@ -554,6 +555,10 @@ body {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     border: 1px solid rgba(201, 169, 97, 0.2);
     transition: all 0.3s ease;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .testimonial:hover {
@@ -705,12 +710,12 @@ body {
     }
     
     .nav-link {
-        padding: 0.3rem 0.4rem;
-        font-size: 0.75rem;
+        padding: 0.4rem 0.6rem;
+        font-size: 0.85rem;
     }
     
     .navbar .nav-menu .nav-link.book-now {
-        padding: 0.3rem 0.6rem !important;
+        padding: 0.4rem 0.8rem !important;
     }
     
     .nav-logo {
@@ -719,7 +724,7 @@ body {
     
     .nav-logo span {
         display: inline-block;
-        max-width: 150px;
+        max-width: 160px;
         overflow: hidden;
         text-overflow: ellipsis;
     }
@@ -737,12 +742,12 @@ body {
     }
     
     .nav-link {
-        padding: 0.3rem 0.35rem;
-        font-size: 0.7rem;
+        padding: 0.4rem 0.5rem;
+        font-size: 0.82rem;
     }
     
     .navbar .nav-menu .nav-link.book-now {
-        padding: 0.3rem 0.5rem !important;
+        padding: 0.4rem 0.65rem !important;
     }
     
     .nav-logo {
@@ -751,7 +756,7 @@ body {
     
     .nav-logo span {
         display: inline-block;
-        max-width: 120px;
+        max-width: 140px;
         overflow: hidden;
         text-overflow: ellipsis;
     }
@@ -859,7 +864,11 @@ body {
     }
     
     .nav-logo span {
-        display: none;
+        display: inline-block;
+        max-width: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
     
     .nav-menu {
@@ -868,18 +877,6 @@ body {
     
     .carousel-content {
         padding: 1rem;
-    }
-    
-    .carousel-content h1 {
-        font-size: 2rem;
-    }
-    
-    .carousel-content p {
-        font-size: 1rem;
-    }
-    
-    .section-title {
-        font-size: 1.5rem;
     }
     
     .photo-gallery {
@@ -946,7 +943,9 @@ body {
     border-radius: 15px;
     overflow: hidden;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    height: 400px;
+    aspect-ratio: 16/9;
+    height: auto;
+    min-height: 250px;
     border: 3px solid #C9A961;
 }
 
@@ -964,7 +963,7 @@ body {
     }
     
     .map-container {
-        height: 300px;
+        min-height: 220px;
     }
 }
 

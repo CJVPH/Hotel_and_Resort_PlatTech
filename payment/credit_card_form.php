@@ -76,6 +76,10 @@ $backUrl = $isPavilion ? "payment_method.php?booking_id=$bookingId" : "payment_m
                 <div class="booking-header">
                     <h1><i class="fas fa-credit-card"></i> Credit Card Payment</h1>
                     <p>Enter your card details securely</p>
+                    <div style="margin-top:0.75rem;display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;">
+                        <img src="../uploads/payment-icons/Visa.png" alt="Visa" style="height:28px;object-fit:contain;">
+                        <img src="../uploads/payment-icons/MasterCard.png" alt="Mastercard" style="height:28px;object-fit:contain;">
+                    </div>
                 </div>
 
                 <!-- Payment Amount -->

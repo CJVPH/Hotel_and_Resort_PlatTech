@@ -76,6 +76,9 @@ $backUrl = $isPavilion ? "payment_method.php?booking_id=$bookingId" : "payment_m
                 <div class="booking-header">
                     <h1><i class="fab fa-paypal"></i> PayPal Payment</h1>
                     <p>Complete your payment securely with PayPal</p>
+                    <div style="margin-top:0.75rem;">
+                        <img src="../uploads/payment-icons/Paypal.png" alt="PayPal" style="height:36px;object-fit:contain;">
+                    </div>
                 </div>
 
                 <!-- Payment Amount -->

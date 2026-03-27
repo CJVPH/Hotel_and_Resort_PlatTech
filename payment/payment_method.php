@@ -109,16 +109,22 @@ $hiddenBooking     = $isPavilion ? $bookingId : '';
                     <div class="payment-methods">
                         <?php
                         $methods = [
-                            ['value'=>'credit_card',  'icon'=>'fas fa-credit-card', 'label'=>'Credit/Debit Card',  'desc'=>'Visa, Mastercard, American Express'],
-                            ['value'=>'paypal',        'icon'=>'fab fa-paypal',      'label'=>'PayPal',             'desc'=>'Pay securely with your PayPal account'],
-                            ['value'=>'gcash',         'icon'=>'fas fa-mobile-alt',  'label'=>'GCash',              'desc'=>'Pay using your GCash mobile wallet'],
-                            ['value'=>'bank_transfer', 'icon'=>'fas fa-university',  'label'=>'Bank Transfer',      'desc'=>'Direct bank transfer or online banking'],
-                            ['value'=>'cash',          'icon'=>'fas fa-money-bill-wave','label'=>'Cash Payment',    'desc'=>'Pay in cash at our front desk'],
-                            ['value'=>'otc',           'icon'=>'fas fa-store',       'label'=>'Over the Counter',   'desc'=>'Pay at 7-Eleven, SM, or other partner stores'],
+                            ['value'=>'credit_card',  'icon'=>'fas fa-credit-card',    'label'=>'Credit/Debit Card',  'desc'=>'Visa, Mastercard, American Express', 'img'=>null],
+                            ['value'=>'paypal',        'icon'=>'fab fa-paypal',          'label'=>'PayPal',             'desc'=>'Pay securely with your PayPal account', 'img'=>'../uploads/payment-icons/PaypalIcon.png'],
+                            ['value'=>'gcash',         'icon'=>'fas fa-mobile-alt',      'label'=>'GCash',              'desc'=>'Pay using your GCash mobile wallet', 'img'=>'../uploads/payment-icons/GcashIcon.png'],
+                            ['value'=>'bank_transfer', 'icon'=>'fas fa-university',      'label'=>'Bank Transfer',      'desc'=>'Direct bank transfer or online banking', 'img'=>null],
+                            ['value'=>'cash',          'icon'=>'fas fa-money-bill-wave', 'label'=>'Cash Payment',       'desc'=>'Pay in cash at our front desk', 'img'=>null],
+                            ['value'=>'otc',           'icon'=>'fas fa-store',           'label'=>'Over the Counter',   'desc'=>'Pay at 7-Eleven, SM, or other partner stores', 'img'=>null],
                         ];
                         foreach ($methods as $m): ?>
                         <div class="payment-method-card">
-                            <div class="method-icon"><i class="<?php echo $m['icon']; ?>"></i></div>
+                            <div class="method-icon">
+                                <?php if (!empty($m['img'])): ?>
+                                    <img src="<?php echo $m['img']; ?>" alt="<?php echo $m['label']; ?>" style="height:40px;max-width:60px;object-fit:contain;">
+                                <?php else: ?>
+                                    <i class="<?php echo $m['icon']; ?>"></i>
+                                <?php endif; ?>
+                            </div>
                             <div class="method-info">
                                 <h4><?php echo $m['label']; ?></h4>
                                 <p><?php echo $m['desc']; ?></p>

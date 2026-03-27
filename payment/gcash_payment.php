@@ -76,6 +76,9 @@ $backUrl = $isPavilion ? "payment_method.php?booking_id=$bookingId" : "payment_m
                 <div class="booking-header">
                     <h1><i class="fas fa-mobile-alt"></i> GCash Payment</h1>
                     <p>Scan QR code to pay with GCash</p>
+                    <div style="margin-top:0.75rem;">
+                        <img src="../uploads/payment-icons/Gcash.png" alt="GCash" style="height:36px;object-fit:contain;">
+                    </div>
                 </div>
 
                 <!-- Payment Amount -->

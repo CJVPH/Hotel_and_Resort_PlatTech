@@ -176,9 +176,12 @@ function rmClearErrs(ids) {
     });
 }
 function rmToast(msg) {
-    // reuse pavilion toast if available, else alert
+    // pvToast is defined inline in booking.php after this script loads
     if (typeof pvToast === 'function') { pvToast(false, msg); return; }
-    alert(msg);
+    // Fallback: try again after a tick (pvToast may not be defined yet on first call)
+    setTimeout(() => {
+        if (typeof pvToast === 'function') { pvToast(false, msg); } else { alert(msg); }
+    }, 50);
 }
 
 // ============================================
@@ -494,62 +497,98 @@ function renderPreview(roomData, images, roomNumber, roomType) {
 // FORM SUBMISSION
 // ============================================
 function handleBookingSubmit(event) {
-    const name  = document.getElementById('name').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const room  = document.getElementById('room').value;
-    const ci    = document.getElementById('checkin').value;
-    const co    = document.getElementById('checkout').value;
-    const price = document.getElementById('price').value;
+    event.preventDefault(); // Always prevent default — we handle submission manually
 
-    if (!name || !email || !room || !ci || !co || !price || parseFloat(price) <= 0) {
-        event.preventDefault();
-        rmToast('Please complete all steps before submitting.');
-        return false;
-    }
+    const name   = document.getElementById('name').value.trim();
+    const email  = document.getElementById('email').value.trim();
+    const phone  = document.getElementById('phone').value.trim();
+    const guests = document.getElementById('guests').value;
+    const room   = document.getElementById('room').value;
+    const ci     = document.getElementById('checkin').value;
+    const co     = document.getElementById('checkout').value;
+    const price  = document.getElementById('price').value;
 
-    // ── LOGIN CHECK ────────────────────────────────────────────────
-    // Check if user is logged in. If not, save form data and redirect to login
+    // Validation
+    if (!name || !email) { rmToast('Please fill in your guest information (Step 1).'); return; }
+    if (!phone)           { rmToast('Please fill in your phone number (Step 1).'); return; }
+    if (!guests)          { rmToast('Please select number of guests (Step 1).'); return; }
+    if (!room)            { rmToast('Please select a room (Step 2).'); return; }
+    if (!ci || !co)       { rmToast('Please select your check-in and check-out dates (Step 3).'); return; }
+    if (!price || parseFloat(price) <= 0) { rmToast('Could not calculate price. Please re-select your dates.'); return; }
+
+    // Login check
     const isLoggedIn = document.getElementById('isUserLoggedIn')?.value === '1';
     if (!isLoggedIn) {
-        event.preventDefault();
-        
-        // Save all booking form data to sessionStorage
         const bookingData = {
-            name: name,
-            email: email,
+            name, email,
             phone: document.getElementById('phone').value,
-            guests: document.getElementById('guests').value,
-            room: room,
+            guests,
+            room,
             roomData: document.getElementById('roomData').value,
-            price: price,
-            checkin: ci,
-            checkout: co,
+            price, checkin: ci, checkout: co,
             specialRequests: document.getElementById('specialRequests')?.value || '',
             nights: document.getElementById('nights').value
         };
         sessionStorage.setItem('pendingBooking', JSON.stringify(bookingData));
-        sessionStorage.setItem('bookingStep', '4'); // Resume from review step
-        
-        // Redirect to login with return URL
+        sessionStorage.setItem('bookingStep', '4');
         window.location.href = 'login.php?return=booking';
-        return false;
+        return;
     }
-    // ────────────────────────────────────────────────────────────────
 
     // Attach special requests to roomData
-    const specialRequests = document.getElementById('specialRequests')?.value;
-    const roomDataInput   = document.getElementById('roomData');
-    if (roomDataInput?.value && specialRequests) {
-        try { const rd = JSON.parse(roomDataInput.value); rd.special_requests = specialRequests; roomDataInput.value = JSON.stringify(rd); } catch(e) {}
+    const specialRequests = document.getElementById('specialRequests')?.value || '';
+    const roomDataInput = document.getElementById('roomData');
+    let optionsVal = roomDataInput?.value || '';
+    if (optionsVal && specialRequests) {
+        try { const rd = JSON.parse(optionsVal); rd.special_requests = specialRequests; optionsVal = JSON.stringify(rd); } catch(e) {}
     }
 
+    // Disable button and show spinner
     const submitBtn = document.getElementById('submitBtn');
     if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-        setTimeout(() => { if (submitBtn.disabled) { submitBtn.disabled=false; submitBtn.innerHTML='<i class="fas fa-credit-card"></i> Confirm & Pay'; } }, 10000);
     }
-    return true;
+
+    // Submit via fetch — full control, no silent failures
+    const fd = new FormData();
+    fd.append('name',            name);
+    fd.append('email',           email);
+    fd.append('phone',           phone);
+    fd.append('guests',          guests);
+    fd.append('room',            room);
+    fd.append('options',         optionsVal);
+    fd.append('price',           price);
+    fd.append('checkin',         ci);
+    fd.append('checkout',        co);
+    fd.append('nights',          document.getElementById('nights').value);
+    fd.append('special_requests', specialRequests);
+
+    fetch('process.php', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: fd
+    })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = data.redirect;
+            } else {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-credit-card"></i> Confirm & Pay';
+                }
+                rmToast(data.message || 'Booking failed. Please try again.');
+            }
+        })
+        .catch(err => {
+            console.error('Booking submit error:', err);
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-credit-card"></i> Confirm & Pay';
+            }
+            rmToast('Network error. Please try again.');
+        });
 }
 
 window.addEventListener('error', e => console.error('Booking error:', e.error));
