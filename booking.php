@@ -174,9 +174,6 @@ $carouselPhotos = getPhotosWithFallback('carousel', 5);
                             <i class="fas fa-user-circle"></i>
                             <span>Hello, <?php echo htmlspecialchars(getFirstName() ?? getUsername()); ?></span>
                         </a>
-                        <a href="logout.php" class="logout-btn">
-                            <i class="fas fa-sign-out-alt"></i>
-                        </a>
                     </div>
                 <?php else: ?>
                     <div class="auth-links">

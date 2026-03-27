@@ -1,3 +1,0 @@
-2026-02-18 04:48:56 - Database query error: Unknown column 'google_id' in 'field list'
-2026-02-18 04:50:05 - Database query error: Unknown column 'google_id' in 'field list'
-2026-02-24 08:08:05 - Authorization code not received

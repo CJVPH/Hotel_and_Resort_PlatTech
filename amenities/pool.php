@@ -96,7 +96,6 @@ $poolPhotos = getPhotosWithFallback('pool', 20);
                         Book Now
                     </a>
                     <a href="../profile.php" class="nav-user" style="text-decoration: none; cursor: pointer;"><i class="fas fa-user-circle"></i><span>Hello, <?php echo htmlspecialchars(getFirstName() ?? getUsername()); ?></span></a>
-                    <a href="../logout.php" class="nav-link">Logout</a>
                 <?php else: ?>
                     <a href="../booking.php" class="nav-link book-now">
                         <i class="fas fa-calendar-check"></i>

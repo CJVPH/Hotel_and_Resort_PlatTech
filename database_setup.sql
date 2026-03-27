@@ -346,3 +346,24 @@ INSERT INTO pavilion_event_prices (event_type, base_price) VALUES
 ('Birthday Party',  15000.00),
 ('Graduation',      15000.00),
 ('Other',           15000.00);
+
+-- ============================================
+-- GUEST REVIEWS
+-- ============================================
+CREATE TABLE guest_reviews (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    guest_name VARCHAR(100) NOT NULL,
+    guest_type VARCHAR(100) NOT NULL,
+    review_text TEXT NOT NULL,
+    rating TINYINT NOT NULL DEFAULT 5,
+    is_active TINYINT(1) DEFAULT 1,
+    sort_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_active (is_active),
+    INDEX idx_sort (sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO guest_reviews (guest_name, guest_type, review_text, rating, sort_order) VALUES
+('John & Sarah Davis', 'Honeymoon Suite Guests', 'An absolutely incredible experience! The staff was amazing, the rooms were luxurious, and the amenities exceeded all expectations. We\'ll definitely be back!', 5, 1),
+('Maria Johnson',      'VIP Suite Guest',        'Paradise Hotel truly lives up to its name. From the moment we arrived, we were treated like royalty. The spa treatments were divine and the food was exceptional.', 5, 2),
+('Robert Wilson',      'Family Suite Guest',     'Perfect for our family vacation! The kids loved the pool, we enjoyed the spa, and everyone raved about the restaurant. Outstanding service throughout our stay.', 5, 3);

@@ -119,9 +119,6 @@ try {
     $errorMsg = $e->getMessage();
     error_log('Google OAuth Error: ' . $errorMsg);
     
-    // For debugging - store error in file if it fails
-    file_put_contents('oauth_error_log.txt', date('Y-m-d H:i:s') . ' - ' . $errorMsg . "\n", FILE_APPEND);
-    
     // Redirect to login with error message (limit length for URL)
     $displayError = strlen($errorMsg) > 100 ? substr($errorMsg, 0, 100) . '...' : $errorMsg;
     $errorMessage = urlencode('Login failed: ' . $displayError);

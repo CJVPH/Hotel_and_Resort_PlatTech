@@ -21,7 +21,7 @@ if ($photoId <= 0) {
     exit();
 }
 
-$validSections = ['carousel', 'pool', 'spa', 'restaurant'];
+$validSections = ['carousel', 'pool', 'spa', 'restaurant', 'pavilion'];
 if (!in_array($section, $validSections)) {
     echo json_encode(['success' => false, 'message' => 'Invalid section']);
     exit();

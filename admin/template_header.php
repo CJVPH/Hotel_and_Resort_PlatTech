@@ -66,6 +66,9 @@
                 <a href="settings.php" class="nav-item <?php echo ($currentPage ?? '') === 'settings' ? 'active' : ''; ?>">
                     <i class="fas fa-cog"></i> Settings
                 </a>
+                <a href="reviews.php" class="nav-item <?php echo ($currentPage ?? '') === 'reviews' ? 'active' : ''; ?>">
+                    <i class="fas fa-star"></i> Guest Reviews
+                </a>
                 <a href="../index.php" class="nav-item" target="_blank">
                     <i class="fas fa-external-link-alt"></i> View Site
                 </a>

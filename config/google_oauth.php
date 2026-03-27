@@ -9,7 +9,7 @@ class GoogleOAuth {
         // Google OAuth credentials
         $this->client_id = '829858353753-5er1pes529q7rugedqvrpjfgekqmf5c5.apps.googleusercontent.com';
         $this->client_secret = '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';
-        $this->redirect_uri = 'http://localhost/Hotel_and_Resort/redirect.php';
+        $this->redirect_uri = 'http://localhost/Hotel_and_Resort_PlatTech/redirect.php';
     }
     
     public function getAuthUrl() {
