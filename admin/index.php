@@ -91,14 +91,20 @@ try {
         $totalUsers = $row['count'];
     }
     
-    // Recent reservations
+    // Recent reservations (rooms + pavilion merged, latest 10)
     $recentReservations = [];
-    $result = $conn->query("SELECT r.*, u.username FROM reservations r LEFT JOIN users u ON r.user_id = u.id ORDER BY r.created_at DESC LIMIT 5");
-    if ($result) {
-        while ($row = $result->fetch_assoc()) {
-            $recentReservations[] = $row;
-        }
+    $result = $conn->query("SELECT r.*, u.username, 'room' AS booking_type FROM reservations r LEFT JOIN users u ON r.user_id = u.id ORDER BY r.created_at DESC LIMIT 5");
+    if ($result) { while ($row = $result->fetch_assoc()) $recentReservations[] = $row; }
+
+    // Pavilion bookings
+    $pvCheck = $conn->query("SHOW TABLES LIKE 'pavilion_bookings'");
+    if ($pvCheck && $pvCheck->num_rows > 0) {
+        $pvResult = $conn->query("SELECT *, 'pavilion' AS booking_type FROM pavilion_bookings ORDER BY created_at DESC LIMIT 5");
+        if ($pvResult) { while ($row = $pvResult->fetch_assoc()) $recentReservations[] = $row; }
     }
+    // Sort merged by created_at desc, keep top 10
+    usort($recentReservations, fn($a,$b) => strcmp($b['created_at'], $a['created_at']));
+    $recentReservations = array_slice($recentReservations, 0, 10);
     
     // Get monthly revenue data for chart (last 6 months)
     $monthlyData = [];
@@ -360,7 +366,7 @@ $currentPage = 'dashboard';
 <!-- Recent Reservations -->
             <div class="admin-section">
                 <div class="section-header">
-                    <h2><i class="fas fa-history"></i> Recent Reservations</h2>
+                    <h2><i class="fas fa-history"></i> Recent Bookings</h2>
                     <a href="reservations.php" class="btn btn-primary">View All</a>
                 </div>
                 
@@ -370,30 +376,51 @@ $currentPage = 'dashboard';
                         <thead>
                             <tr>
                                 <th>ID</th>
+                                <th>Type</th>
                                 <th>Guest Name</th>
-                                <th>Room</th>
-                                <th>Check-in</th>
-                                <th>Check-out</th>
+                                <th>Details</th>
+                                <th>Date</th>
                                 <th>Amount</th>
                                 <th>Status</th>
-                                <th>Created</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($recentReservations as $reservation): ?>
+                            <?php foreach ($recentReservations as $r):
+                                $isPav = ($r['booking_type'] ?? '') === 'pavilion';
+                            ?>
                             <tr>
-                                <td>#<?php echo $reservation['id']; ?></td>
-                                <td><?php echo htmlspecialchars($reservation['guest_name']); ?></td>
-                                <td><?php echo htmlspecialchars($reservation['room_type']); ?></td>
-                                <td><?php echo date('M j, Y', strtotime($reservation['checkin_date'])); ?></td>
-                                <td><?php echo date('M j, Y', strtotime($reservation['checkout_date'])); ?></td>
-                                <td>₱<?php echo number_format($reservation['price'], 2); ?></td>
+                                <td>#<?php echo $r['id']; ?></td>
                                 <td>
-                                    <span class="status-badge status-<?php echo $reservation['status']; ?>">
-                                        <?php echo ucfirst($reservation['status']); ?>
+                                    <?php if ($isPav): ?>
+                                    <span style="font-size:0.7rem;background:#e8f4ff;color:#3b82f6;border-radius:4px;padding:0.1rem 0.4rem;font-weight:700;">PAVILION</span>
+                                    <?php else: ?>
+                                    <span style="font-size:0.7rem;background:#fff3cd;color:#856404;border-radius:4px;padding:0.1rem 0.4rem;font-weight:700;">ROOM</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?php echo htmlspecialchars($r['guest_name']); ?></td>
+                                <td>
+                                    <?php if ($isPav): ?>
+                                        <?php echo htmlspecialchars($r['event_type'] ?? 'Event'); ?>
+                                    <?php else:
+                                        $opts = json_decode($r['options'] ?? '{}', true);
+                                        $rNum = $opts['individual_room']['room_number'] ?? '';
+                                        $rType = $opts['individual_room']['room_type'] ?? $r['room_type'] ?? '';
+                                        echo htmlspecialchars($rType . ($rNum ? ' #'.$rNum : ''));
+                                    endif; ?>
+                                </td>
+                                <td>
+                                    <?php if ($isPav): ?>
+                                        <?php echo date('M j, Y', strtotime($r['event_date'])); ?>
+                                    <?php else: ?>
+                                        <?php echo date('M j', strtotime($r['checkin_date'])); ?> - <?php echo date('M j, Y', strtotime($r['checkout_date'])); ?>
+                                    <?php endif; ?>
+                                </td>
+                                <td>₱<?php echo number_format($r['price'], 2); ?></td>
+                                <td>
+                                    <span class="status-badge status-<?php echo $r['status']; ?>">
+                                        <?php echo ucfirst($r['status']); ?>
                                     </span>
                                 </td>
-                                <td><?php echo date('M j, Y', strtotime($reservation['created_at'])); ?></td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -402,8 +429,8 @@ $currentPage = 'dashboard';
                 <?php else: ?>
                 <div class="empty-state">
                     <i class="fas fa-calendar-times"></i>
-                    <h3>No Reservations Yet</h3>
-                    <p>Reservations will appear here once customers start booking.</p>
+                    <h3>No Bookings Yet</h3>
+                    <p>Bookings will appear here once customers start reserving.</p>
                 </div>
                 <?php endif; ?>
             </div>

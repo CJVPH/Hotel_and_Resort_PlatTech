@@ -211,13 +211,35 @@ if ($isPavilion) {
     @media print {
         * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         body { background: #fff !important; }
-        .topbar { display: none !important; }
+        .topbar  { display: none !important; }
         .btn-row { display: none !important; }
+        .hero    { display: none !important; }
+        .section:last-of-type { display: none !important; } /* hide Important Information */
         .page { margin: 0 !important; padding: 0 !important; max-width: 100% !important; }
         .card { box-shadow: none !important; border-radius: 0 !important; }
-        .hero { background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%) !important; }
         .detail-row { page-break-inside: avoid; }
         .section { page-break-inside: avoid; }
+
+        /* Print header — logo + name */
+        .print-header { display: flex !important; }
+    }
+    .print-header {
+        display: none;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.5rem 2rem 1rem;
+        border-bottom: 2px solid #C9A961;
+        margin-bottom: 1rem;
+    }
+    .print-header img {
+        width: 52px; height: 52px;
+        border-radius: 50%; object-fit: cover;
+    }
+    .print-header-text h2 {
+        font-size: 1.2rem; font-weight: 800; color: #2C3E50; margin: 0;
+    }
+    .print-header-text p {
+        font-size: 0.82rem; color: #888; margin: 0.1rem 0 0;
     }
     </style>
 </head>
@@ -235,6 +257,15 @@ if ($isPavilion) {
 
 <div class="page">
 <div class="card">
+
+    <!-- Print header (only visible when printing) -->
+    <div class="print-header">
+        <img src="uploads/logo/logo.png" alt="Paradise Hotel & Resort" onerror="this.style.display='none'">
+        <div class="print-header-text">
+            <h2>Paradise Hotel &amp; Resort</h2>
+            <p>Reservation Details &mdash; <?php echo $refNum; ?></p>
+        </div>
+    </div>
 
     <!-- Hero -->
     <div class="hero">

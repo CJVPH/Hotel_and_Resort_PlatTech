@@ -23,17 +23,23 @@ $today = date('Y-m-d');
 $upcomingBookings = [];
 $pastBookings = [];
 
-$stmt = $conn->prepare("SELECT * FROM reservations WHERE user_id = ? ORDER BY checkin_date DESC");
+// Room reservations
+$stmt = $conn->prepare("SELECT *, 'room' AS booking_type FROM reservations WHERE user_id = ? AND status != 'cancelled' ORDER BY checkin_date DESC");
 $stmt->bind_param("i", $userId);
 $stmt->execute();
 $result = $stmt->get_result();
-
 while ($booking = $result->fetch_assoc()) {
-    // Skip cancelled bookings
-    if ($booking['payment_status'] === 'cancelled') {
-        continue;
-    }
-    
+    // Parse room name from options JSON
+    $opts = json_decode($booking['options'] ?? '', true);
+    $roomName = $opts['individual_room']['room_name'] ?? $opts['individual_room']['room_type'] ?? $booking['room_type'] ?? 'Room';
+    $roomNumber = $opts['individual_room']['room_number'] ?? '';
+    $booking['display_name'] = $roomName . ($roomNumber ? ' (Room ' . $roomNumber . ')' : '');
+    $booking['display_icon'] = 'fa-bed';
+    $booking['display_date'] = date('M j, Y', strtotime($booking['checkin_date'])) . ' - ' . date('M j, Y', strtotime($booking['checkout_date']));
+    $booking['display_guests'] = $booking['guests'] . ' Guests';
+    $booking['view_url'] = 'confirmation.php?reservation_id=' . $booking['id'];
+    $booking['cancel_id'] = $booking['id'];
+
     if ($booking['checkin_date'] >= $today) {
         $upcomingBookings[] = $booking;
     } else {
@@ -41,6 +47,35 @@ while ($booking = $result->fetch_assoc()) {
     }
 }
 $stmt->close();
+
+// Pavilion bookings
+$stmt = $conn->prepare("SELECT *, 'pavilion' AS booking_type FROM pavilion_bookings WHERE user_id = ? AND status != 'cancelled' ORDER BY event_date DESC");
+$stmt->bind_param("i", $userId);
+$stmt->execute();
+$result = $stmt->get_result();
+while ($booking = $result->fetch_assoc()) {
+    $booking['display_name'] = 'Pavilion - ' . ($booking['event_type'] ?? 'Event');
+    $booking['display_icon'] = 'fa-archway';
+    $booking['display_date'] = date('M j, Y', strtotime($booking['event_date'])) . ($booking['event_time'] ? ' at ' . $booking['event_time'] : '');
+    $booking['display_guests'] = ($booking['pax'] ?? 0) . ' Guests';
+    $booking['view_url'] = 'confirmation.php?booking_id=' . $booking['id'];
+    $booking['cancel_id'] = null;
+    // Use event_date as checkin_date equivalent
+    $booking['checkin_date'] = $booking['event_date'];
+    $booking['price'] = $booking['price'] ?? 0;
+    $booking['payment_reference'] = $booking['payment_reference'] ?? '';
+
+    if ($booking['event_date'] >= $today) {
+        $upcomingBookings[] = $booking;
+    } else {
+        $pastBookings[] = $booking;
+    }
+}
+$stmt->close();
+
+// Sort both arrays by date descending
+usort($upcomingBookings, fn($a,$b) => strcmp($b['checkin_date'], $a['checkin_date']));
+usort($pastBookings,    fn($a,$b) => strcmp($b['checkin_date'], $a['checkin_date']));
 
 // Handle profile update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -143,537 +178,265 @@ $conn->close();
     <link rel="stylesheet" href="assets/css/booking.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        .profile-page {
-            background: linear-gradient(135deg, #2C3E50 0%, #34495E 100%);
-            min-height: 100vh;
-            padding: 2rem 0;
-        }
-        
-        .profile-container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-        
-        .profile-header {
-            text-align: center;
-            color: white;
-            margin-bottom: 2rem;
-        }
-        
-        .profile-header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .profile-header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-        
-        .profile-card {
-            background: white;
-            border-radius: 20px;
-            padding: 2.5rem;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        }
-        
-        .profile-avatar {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        
-        .avatar-circle {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #C9A961 0%, #8B7355 100%);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-            color: white;
-            font-weight: 700;
-            box-shadow: 0 10px 30px rgba(201, 169, 97, 0.3);
-        }
-        
-        .section-divider {
-            border: none;
-            border-top: 2px solid #f0f0f0;
-            margin: 2rem 0;
-        }
-        
-        .section-title {
-            color: #2C3E50;
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .section-title i {
-            color: #C9A961;
-        }
-        
-        .back-link-profile {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: white;
-            text-decoration: none;
-            padding: 0.75rem 1.5rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50px;
-            transition: all 0.3s ease;
-            margin-bottom: 2rem;
-        }
-        
-        .back-link-profile:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateX(-5px);
-        }
-    </style>
+    <link rel="stylesheet" href="assets/css/profile.css">
 </head>
 <body class="profile-page">
-    <div class="profile-container">
-        <a href="index.php" class="back-link-profile">
-            <i class="fas fa-arrow-left"></i>
-            Back to Home
+
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="index.php" class="nav-logo">
+            <img src="uploads/logo/logo.png" alt="Logo" class="nav-logo-img" onerror="this.style.display='none'">
+            <span>Paradise Hotel & Resort</span>
         </a>
-        
-        <div class="profile-header">
-            <h1><i class="fas fa-user-circle"></i> My Profile</h1>
-            <p>Manage your account information</p>
-            <div style="margin-top: 1rem;">
-                <a href="logout.php" class="btn-submit" style="display: inline-block; background: #e74c3c; text-decoration: none; color: white; padding: 0.6rem 1.5rem; border-radius: 5px;" onclick="return confirm('Are you sure you are going to log out?');">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
-            </div>
+        <div class="nav-menu">
+            <a href="index.php" class="nav-link"><i class="fas fa-home"></i> Home</a>
+            <a href="booking.php" class="nav-link book-now"><i class="fas fa-calendar-check"></i> Book Now</a>
         </div>
-        
-        <div class="profile-card">
-            <?php if ($message): ?>
-                <div class="alert alert-<?php echo $messageType; ?>">
-                    <i class="fas fa-<?php echo $messageType === 'success' ? 'check-circle' : 'exclamation-circle'; ?>"></i>
-                    <?php echo htmlspecialchars($message); ?>
-                </div>
-            <?php endif; ?>
-            
-            <div class="profile-avatar">
-                <div class="avatar-circle">
-                    <?php echo strtoupper(substr(getFirstName() ?? 'U', 0, 1)); ?>
-                </div>
-                <h2 style="margin-top: 1rem; color: #2C3E50;"><?php echo htmlspecialchars($user['full_name']); ?></h2>
-                <p style="color: #666;">Member since <?php echo date('F Y', strtotime($user['created_at'])); ?></p>
-            </div>
-            
-            <form method="POST" action="">
-                <div class="section-title">
-                    <i class="fas fa-user"></i>
-                    Personal Information
-                </div>
-                
-                <div class="form-section">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="full_name">Full Name *</label>
-                            <input type="text" id="full_name" name="full_name" required 
-                                   value="<?php echo htmlspecialchars($user['full_name']); ?>">
-                        </div>
-                        <div class="form-group">
-                            <label for="username">Username</label>
-                            <input type="text" id="username" value="<?php echo htmlspecialchars($user['username']); ?>" disabled>
-                            <small style="color: #666; font-size: 0.85rem;">Username cannot be changed</small>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="email">Email Address *</label>
-                            <input type="email" id="email" name="email" required 
-                                   value="<?php echo htmlspecialchars($user['email']); ?>">
-                        </div>
-                        <div class="form-group">
-                            <label for="phone">Phone Number</label>
-                            <input type="tel" id="phone" name="phone" 
-                                   value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>">
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="address">Address</label>
-                            <input type="text" id="address" name="address" 
-                                   value="<?php echo htmlspecialchars($user['address'] ?? ''); ?>">
-                        </div>
-                    </div>
-                </div>
-                
-                <hr class="section-divider">
-                
-                <div class="section-title">
-                    <i class="fas fa-lock"></i>
-                    Change Password
-                </div>
-                
-                <div class="form-section">
-                    <p style="color: #666; margin-bottom: 1rem;">Leave password fields empty if you don't want to change your password.</p>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="current_password">Current Password</label>
-                            <input type="password" id="current_password" name="current_password">
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="new_password">New Password</label>
-                            <input type="password" id="new_password" name="new_password" minlength="6">
-                        </div>
-                        <div class="form-group">
-                            <label for="confirm_password">Confirm New Password</label>
-                            <input type="password" id="confirm_password" name="confirm_password" minlength="6">
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-actions">
-                    <button type="submit" class="btn-submit">
-                        <i class="fas fa-save"></i> Save Changes
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <!-- Upcoming Bookings -->
-        <?php if (count($upcomingBookings) > 0): ?>
-        <div class="profile-card" style="margin-top: 2rem;">
-            <div class="section-title">
-                <i class="fas fa-calendar-check"></i>
-                Upcoming Bookings
-            </div>
-            
-            <div class="bookings-list">
-                <?php foreach ($upcomingBookings as $booking): ?>
-                <div class="booking-item">
-                    <div class="booking-header-item">
-                        <div class="booking-room">
-                            <i class="fas fa-bed"></i>
-                            <strong><?php echo htmlspecialchars($booking['room_type']); ?></strong>
-                        </div>
-                        <div class="booking-status status-<?php echo $booking['payment_status']; ?>">
-                            <?php echo ucfirst($booking['payment_status']); ?>
-                        </div>
-                    </div>
-                    <div class="booking-details-grid">
-                        <div class="booking-detail">
-                            <i class="fas fa-calendar"></i>
-                            <span><?php echo date('M j, Y', strtotime($booking['checkin_date'])); ?> - <?php echo date('M j, Y', strtotime($booking['checkout_date'])); ?></span>
-                        </div>
-                        <div class="booking-detail">
-                            <i class="fas fa-users"></i>
-                            <span><?php echo $booking['guests']; ?> Guests</span>
-                        </div>
-                        <div class="booking-detail">
-                            <i class="fas fa-money-bill-wave"></i>
-                            <span>₱<?php echo number_format($booking['price'], 2); ?></span>
-                        </div>
-                        <div class="booking-detail">
-                            <i class="fas fa-hashtag"></i>
-                            <span>Ref: <?php echo htmlspecialchars($booking['payment_reference']); ?></span>
-                        </div>
-                    </div>
-                    <div class="booking-actions">
-                        <a href="confirmation.php?reservation_id=<?php echo $booking['id']; ?>" class="btn-view">
-                            <i class="fas fa-eye"></i> View Details
-                        </a>
-                        <button onclick="cancelBooking(<?php echo $booking['id']; ?>)" class="btn-cancel">
-                            <i class="fas fa-times-circle"></i> Cancel Booking
-                        </button>
-                    </div>
-                </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-        <?php endif; ?>
-
-        <!-- Past Bookings -->
-        <?php if (count($pastBookings) > 0): ?>
-        <div class="profile-card" style="margin-top: 2rem;">
-            <div class="section-title">
-                <i class="fas fa-history"></i>
-                Booking History
-            </div>
-            
-            <div class="bookings-list">
-                <?php foreach (array_slice($pastBookings, 0, 5) as $booking): ?>
-                <div class="booking-item past-booking">
-                    <div class="booking-header-item">
-                        <div class="booking-room">
-                            <i class="fas fa-bed"></i>
-                            <strong><?php echo htmlspecialchars($booking['room_type']); ?></strong>
-                        </div>
-                        <div class="booking-status status-completed">
-                            Completed
-                        </div>
-                    </div>
-                    <div class="booking-details-grid">
-                        <div class="booking-detail">
-                            <i class="fas fa-calendar"></i>
-                            <span><?php echo date('M j, Y', strtotime($booking['checkin_date'])); ?> - <?php echo date('M j, Y', strtotime($booking['checkout_date'])); ?></span>
-                        </div>
-                        <div class="booking-detail">
-                            <i class="fas fa-users"></i>
-                            <span><?php echo $booking['guests']; ?> Guests</span>
-                        </div>
-                        <div class="booking-detail">
-                            <i class="fas fa-money-bill-wave"></i>
-                            <span>₱<?php echo number_format($booking['price'], 2); ?></span>
-                        </div>
-                        <div class="booking-detail">
-                            <i class="fas fa-hashtag"></i>
-                            <span>Ref: <?php echo htmlspecialchars($booking['payment_reference']); ?></span>
-                        </div>
-                    </div>
-                    <div class="booking-actions">
-                        <a href="confirmation.php?reservation_id=<?php echo $booking['id']; ?>" class="btn-view">
-                            <i class="fas fa-eye"></i> View Details
-                        </a>
-                    </div>
-                </div>
-                <?php endforeach; ?>
-                <?php if (count($pastBookings) > 5): ?>
-                <p style="text-align: center; color: #666; margin-top: 1rem;">
-                    Showing 5 most recent bookings
-                </p>
-                <?php endif; ?>
-            </div>
-        </div>
-        <?php endif; ?>
-
-        <?php if (count($upcomingBookings) === 0 && count($pastBookings) === 0): ?>
-        <div class="profile-card" style="margin-top: 2rem;">
-            <div class="no-bookings">
-                <i class="fas fa-calendar-times"></i>
-                <h3>No Bookings Yet</h3>
-                <p>You haven't made any reservations yet.</p>
-                <a href="booking.php" class="btn-submit" style="margin-top: 1rem;">
-                    <i class="fas fa-plus"></i> Make a Reservation
-                </a>
-            </div>
-        </div>
-        <?php endif; ?>
     </div>
+</nav>
 
-    <style>
-        .bookings-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
+<div class="prof-wrap">
 
-        .booking-item {
-            background: #f8f9fa;
-            border: 2px solid #e0e0e0;
-            border-radius: 15px;
-            padding: 1.5rem;
-            transition: all 0.3s ease;
-        }
+    <!-- Sidebar -->
+    <aside class="prof-sidebar">
+        <div class="prof-avatar" id="profAvatarWrap" onclick="document.getElementById('photoInput').click()" title="Click to change photo" style="cursor:pointer;position:relative;overflow:visible;">
+            <?php if (!empty($user['profile_photo']) && file_exists($user['profile_photo'])): ?>
+                <img src="<?php echo htmlspecialchars($user['profile_photo']); ?>" id="profAvatarImg"
+                     style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;">
+            <?php else: ?>
+                <span id="profAvatarInitial"><?php echo strtoupper(substr(getFirstName() ?? 'U', 0, 1)); ?></span>
+            <?php endif; ?>
+            <div style="position:absolute;bottom:2px;right:2px;width:24px;height:24px;background:#C9A961;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #1a2a4a;pointer-events:none;">
+                <i class="fas fa-camera" style="font-size:0.6rem;color:#fff;"></i>
+            </div>
+        </div>
+        <input type="file" id="photoInput" accept="image/*" style="display:none;" onchange="uploadPhoto(this)">
+        <div class="prof-name"><?php echo htmlspecialchars($user['full_name']); ?></div>
+        <div class="prof-username">@<?php echo htmlspecialchars($user['username']); ?></div>
+        <div class="prof-since">Member since <?php echo date('F Y', strtotime($user['created_at'])); ?></div>
 
-        .booking-item:hover {
-            border-color: #C9A961;
-            box-shadow: 0 5px 15px rgba(201, 169, 97, 0.2);
-            transform: translateY(-2px);
-        }
+        <div class="prof-meta">
+            <div class="prof-meta-item"><i class="fas fa-envelope"></i><?php echo htmlspecialchars($user['email']); ?></div>
+            <?php if (!empty($user['phone'])): ?>
+            <div class="prof-meta-item"><i class="fas fa-phone"></i><?php echo htmlspecialchars($user['phone']); ?></div>
+            <?php endif; ?>
+        </div>
 
-        .past-booking {
-            opacity: 0.85;
-        }
+        <div class="prof-sidebar-nav">
+            <button class="prof-nav-btn active" onclick="showTab('edit')"><i class="fas fa-user-edit"></i> Edit Profile</button>
+            <button class="prof-nav-btn" onclick="showTab('bookings')">
+                <i class="fas fa-calendar-check"></i> My Bookings
+                <?php $total = count($upcomingBookings) + count($pastBookings); if ($total > 0): ?>
+                <span class="prof-badge"><?php echo $total; ?></span>
+                <?php endif; ?>
+            </button>
+        </div>
 
-        .booking-header-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid #e0e0e0;
-        }
+        <a href="logout.php" class="prof-logout" onclick="return confirm('Are you sure you want to log out?');">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    </aside>
 
-        .booking-room {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #2C3E50;
-            font-size: 1.1rem;
-        }
+    <!-- Main -->
+    <main class="prof-main">
 
-        .booking-room i {
-            color: #C9A961;
-        }
+        <?php if ($message): ?>
+        <div class="prof-alert prof-alert-<?php echo $messageType; ?>">
+            <i class="fas fa-<?php echo $messageType === 'success' ? 'check-circle' : 'exclamation-circle'; ?>"></i>
+            <?php echo htmlspecialchars($message); ?>
+        </div>
+        <?php endif; ?>
 
-        .booking-status {
-            padding: 0.5rem 1rem;
-            border-radius: 50px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
+        <!-- Edit Profile Tab -->
+        <div id="tab-edit" class="prof-tab active">
+            <div class="prof-card">
+                <div class="prof-card-title"><i class="fas fa-user"></i> Personal Information</div>
+                <form method="POST" action="">
+                    <div class="prof-form-grid">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" name="full_name" required value="<?php echo htmlspecialchars($user['full_name']); ?>">
+                        </div>
+                        <div class="form-group">
+                            <label>Username</label>
+                            <input type="text" value="<?php echo htmlspecialchars($user['username']); ?>" disabled>
+                            <small>Username cannot be changed</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Email Address</label>
+                            <input type="email" name="email" required value="<?php echo htmlspecialchars($user['email']); ?>">
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number</label>
+                            <input type="tel" name="phone" value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>">
+                        </div>
+                        <div class="form-group prof-full">
+                            <label>Address</label>
+                            <input type="text" name="address" value="<?php echo htmlspecialchars($user['address'] ?? ''); ?>">
+                        </div>
+                    </div>
 
-        .status-completed {
-            background: #d4edda;
-            color: #155724;
-        }
+                    <div class="prof-card-title" style="margin-top:2rem;"><i class="fas fa-lock"></i> Change Password</div>
+                    <p style="color:#888;font-size:0.88rem;margin-bottom:1rem;">Leave blank to keep your current password.</p>
+                    <div class="prof-form-grid">
+                        <div class="form-group prof-full">
+                            <label>Current Password</label>
+                            <input type="password" name="current_password">
+                        </div>
+                        <div class="form-group">
+                            <label>New Password</label>
+                            <input type="password" name="new_password" minlength="6">
+                        </div>
+                        <div class="form-group">
+                            <label>Confirm New Password</label>
+                            <input type="password" name="confirm_password" minlength="6">
+                        </div>
+                    </div>
 
-        .status-pending {
-            background: #fff3cd;
-            color: #856404;
-        }
+                    <div style="margin-top:1.5rem;">
+                        <button type="submit" class="btn-submit"><i class="fas fa-save"></i> Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
-        .status-confirmed {
-            background: #d1ecf1;
-            color: #0c5460;
-        }
+        <!-- Bookings Tab -->
+        <div id="tab-bookings" class="prof-tab">
 
-        .status-cancelled {
-            background: #f8d7da;
-            color: #721c24;
-        }
+            <?php if (count($upcomingBookings) > 0): ?>
+            <div class="prof-card">
+                <div class="prof-card-title"><i class="fas fa-calendar-check"></i> Upcoming Bookings</div>
+                <div class="bk-list">
+                    <?php foreach ($upcomingBookings as $b):
+                        $status = $b['status'] ?? $b['payment_status'] ?? 'pending';
+                    ?>
+                    <div class="bk-item">
+                        <div class="bk-top">
+                            <div class="bk-name">
+                                <i class="fas <?php echo $b['display_icon']; ?>"></i>
+                                <?php echo htmlspecialchars($b['display_name']); ?>
+                            </div>
+                            <span class="bk-status status-<?php echo $status; ?>"><?php echo ucfirst($status); ?></span>
+                        </div>
+                        <div class="bk-meta">
+                            <span><i class="fas fa-calendar"></i> <?php echo htmlspecialchars($b['display_date']); ?></span>
+                            <span><i class="fas fa-users"></i> <?php echo htmlspecialchars($b['display_guests']); ?></span>
+                            <span><i class="fas fa-peso-sign"></i> ₱<?php echo number_format($b['price'], 2); ?></span>
+                            <?php if (!empty($b['payment_reference'])): ?>
+                            <span><i class="fas fa-hashtag"></i> <?php echo htmlspecialchars($b['payment_reference']); ?></span>
+                            <?php endif; ?>
+                        </div>
+                        <div class="bk-actions">
+                            <a href="<?php echo $b['view_url']; ?>" class="bk-btn bk-btn-view"><i class="fas fa-eye"></i> View</a>
+                            <?php if ($b['cancel_id']): ?>
+                            <button onclick="cancelBooking(<?php echo $b['cancel_id']; ?>)" class="bk-btn bk-btn-cancel"><i class="fas fa-times"></i> Cancel</button>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
 
-        .booking-details-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
+            <?php if (count($pastBookings) > 0): ?>
+            <div class="prof-card" style="margin-top:1.5rem;">
+                <div class="prof-card-title"><i class="fas fa-history"></i> Booking History</div>
+                <div class="bk-list">
+                    <?php foreach (array_slice($pastBookings, 0, 10) as $b):
+                        $status = $b['status'] ?? $b['payment_status'] ?? 'pending';
+                    ?>
+                    <div class="bk-item bk-past">
+                        <div class="bk-top">
+                            <div class="bk-name">
+                                <i class="fas <?php echo $b['display_icon']; ?>"></i>
+                                <?php echo htmlspecialchars($b['display_name']); ?>
+                            </div>
+                            <span class="bk-status status-<?php echo $status; ?>"><?php echo ucfirst($status); ?></span>
+                        </div>
+                        <div class="bk-meta">
+                            <span><i class="fas fa-calendar"></i> <?php echo htmlspecialchars($b['display_date']); ?></span>
+                            <span><i class="fas fa-users"></i> <?php echo htmlspecialchars($b['display_guests']); ?></span>
+                            <span><i class="fas fa-peso-sign"></i> ₱<?php echo number_format($b['price'], 2); ?></span>
+                        </div>
+                        <div class="bk-actions">
+                            <a href="<?php echo $b['view_url']; ?>" class="bk-btn bk-btn-view"><i class="fas fa-eye"></i> View</a>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
 
-        .booking-detail {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #555;
-        }
+            <?php if (count($upcomingBookings) === 0 && count($pastBookings) === 0): ?>
+            <div class="prof-card">
+                <div style="text-align:center;padding:3rem 1rem;color:#888;">
+                    <i class="fas fa-calendar-times" style="font-size:3rem;color:#C9A961;opacity:0.5;display:block;margin-bottom:1rem;"></i>
+                    <h3 style="color:#2C3E50;margin-bottom:0.5rem;">No Bookings Yet</h3>
+                    <p>You have not made any reservations yet.</p>
+                    <a href="booking.php" class="btn-submit" style="margin-top:1.25rem;display:inline-flex;"><i class="fas fa-plus"></i> Make a Reservation</a>
+                </div>
+            </div>
+            <?php endif; ?>
 
-        .booking-detail i {
-            color: #C9A961;
-            min-width: 20px;
-        }
+        </div><!-- /tab-bookings -->
 
-        .booking-actions {
-            display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
-        }
+    </main>
+</div><!-- /prof-wrap -->
 
-        .btn-view {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1.5rem;
-            background: linear-gradient(135deg, #C9A961 0%, #8B7355 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: 50px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
+<script>
+function showTab(tab) {
+    document.querySelectorAll('.prof-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.prof-nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    event.currentTarget.classList.add('active');
+}
 
-        .btn-view:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(201, 169, 97, 0.3);
-        }
-
-        .btn-cancel {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1.5rem;
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-            color: white;
-            border: none;
-            border-radius: 50px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-cancel:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
-        }
-
-        .no-bookings {
-            text-align: center;
-            padding: 3rem 2rem;
-            color: #666;
-        }
-
-        .no-bookings i {
-            font-size: 4rem;
-            color: #C9A961;
-            margin-bottom: 1rem;
-        }
-
-        .no-bookings h3 {
-            color: #2C3E50;
-            margin-bottom: 0.5rem;
-        }
-
-        @media (max-width: 768px) {
-            .booking-header-item {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.5rem;
-            }
-
-            .booking-details-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .booking-actions {
-                justify-content: center;
-            }
-        }
-    </style>
-
-    <script>
-    function cancelBooking(reservationId) {
-        if (confirm('Are you sure you want to cancel this booking? This action cannot be undone.')) {
-            // Show loading state
-            const btn = event.target.closest('.btn-cancel');
-            const originalContent = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cancelling...';
-            
-            // Send cancellation request
-            fetch('cancel_booking.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: 'reservation_id=' + reservationId
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Booking cancelled successfully!');
-                    location.reload();
-                } else {
-                    alert('Error: ' + data.message);
-                    btn.disabled = false;
-                    btn.innerHTML = originalContent;
+function uploadPhoto(input) {
+    if (!input.files || !input.files[0]) return;
+    const fd = new FormData();
+    fd.append('photo', input.files[0]);
+    const wrap = document.getElementById('profAvatarWrap');
+    wrap.style.opacity = '0.5';
+    fetch('upload_profile_photo.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+            wrap.style.opacity = '1';
+            if (data.success) {
+                // Replace initial with image
+                const initial = document.getElementById('profAvatarInitial');
+                let img = document.getElementById('profAvatarImg');
+                if (!img) {
+                    img = document.createElement('img');
+                    img.id = 'profAvatarImg';
+                    img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;';
+                    if (initial) initial.replaceWith(img);
+                    else wrap.insertBefore(img, wrap.firstChild);
                 }
-            })
-            .catch(error => {
-                alert('Error cancelling booking. Please try again.');
-                btn.disabled = false;
-                btn.innerHTML = originalContent;
-            });
-        }
-    }
-    </script>
+                img.src = data.path + '?t=' + Date.now();
+            } else {
+                alert(data.message || 'Upload failed.');
+            }
+        })
+        .catch(() => { wrap.style.opacity = '1'; alert('Upload failed. Please try again.'); });
+}
+
+function cancelBooking(reservationId) {
+    if (!confirm('Are you sure you want to cancel this booking?')) return;
+    const btn = event.target.closest('.bk-btn-cancel');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    fetch('cancel_booking.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'reservation_id=' + reservationId
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) { location.reload(); }
+        else { alert('Error: ' + data.message); btn.disabled = false; btn.innerHTML = '<i class="fas fa-times"></i> Cancel'; }
+    })
+    .catch(() => { alert('Error. Please try again.'); btn.disabled = false; btn.innerHTML = '<i class="fas fa-times"></i> Cancel'; });
+}
+</script>
 </body>
 </html>

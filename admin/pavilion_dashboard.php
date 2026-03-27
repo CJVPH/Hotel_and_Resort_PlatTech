@@ -385,24 +385,6 @@ $conn->close();
     </div>
 </div>
 
-<!-- Bookings Management Section -->
-<div class="sc" style="margin-top:.5rem;">
-    <div class="sc-title"><i class="fas fa-list"></i> All Pavilion Bookings</div>
-
-    <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;margin-bottom:1.2rem;">
-        <div style="display:flex;gap:.5rem;flex-wrap:wrap;" id="pvBkTabs">
-            <button class="pb-ftab on" onclick="pvBkFilter('upcoming',this)">Upcoming</button>
-            <button class="pb-ftab"    onclick="pvBkFilter('past',this)">Past</button>
-            <button class="pb-ftab"    onclick="pvBkFilter('cancelled',this)">Cancelled</button>
-            <button class="pb-ftab"    onclick="pvBkFilter('all',this)">All</button>
-        </div>
-        <input class="pb-search" type="text" id="pvBkSearch" placeholder="Search guest, email, event type..." oninput="pvBkDebounce()">
-    </div>
-
-    <div style="overflow-x:auto;">
-        <div id="pvBkTableWrap"><div style="text-align:center;padding:2rem;color:#bbb;">Loading...</div></div>
-    </div>
-</div>
 
 </div><!-- .pv-wrap -->
 

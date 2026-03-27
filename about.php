@@ -9,201 +9,9 @@ require_once 'config/auth.php';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About Us - Paradise Hotel & Resort</title>
     <link rel="stylesheet" href="assets/css/main.css?v=2.0">
+    <link rel="stylesheet" href="assets/css/about.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body { background: #f4f6f8; }
-
-        /* ── Hero ── */
-        .about-hero {
-            background: linear-gradient(135deg, #2C3E50 0%, #34495E 100%);
-            padding: 7rem 0 5rem;
-            position: relative;
-            overflow: hidden;
-        }
-        .about-hero::after {
-            content: '';
-            position: absolute;
-            bottom: -2px; left: 0; right: 0;
-            height: 60px;
-            background: #f4f6f8;
-            clip-path: ellipse(55% 100% at 50% 100%);
-        }
-        .about-hero-inner {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 0 2rem;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4rem;
-            align-items: center;
-        }
-        .about-hero h1 {
-            font-size: clamp(2.2rem, 5vw, 3.5rem);
-            font-weight: 800;
-            color: #fff;
-            margin-bottom: 1rem;
-            line-height: 1.2;
-        }
-        .about-hero h1 span { color: #C9A961; }
-        .about-hero p {
-            color: rgba(255,255,255,0.85);
-            font-size: 1.1rem;
-            line-height: 1.8;
-        }
-        .about-hero-img {
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.4);
-            aspect-ratio: 4/3;
-            background: linear-gradient(135deg,#3d5166,#2C3E50);
-            display: flex; align-items: center; justify-content: center;
-        }
-        .about-hero-img img { width:100%; height:100%; object-fit:cover; display:block; }
-        .about-hero-img-placeholder { color: rgba(255,255,255,0.3); text-align:center; }
-        .about-hero-img-placeholder i { font-size: 4rem; display:block; margin-bottom:0.5rem; }
-
-        /* ── Sections ── */
-        .about-section { padding: 5rem 0; }
-        .about-section:nth-child(even) { background: #fff; }
-        .about-container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
-
-        /* ── Story row ── */
-        .about-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4rem;
-            align-items: center;
-        }
-        .about-row.reverse { direction: rtl; }
-        .about-row.reverse > * { direction: ltr; }
-        .about-row-img {
-            border-radius: 20px;
-            overflow: hidden;
-            aspect-ratio: 4/3;
-            background: linear-gradient(135deg,#e9ecef,#dee2e6);
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.12);
-        }
-        .about-row-img img { width:100%; height:100%; object-fit:cover; display:block; }
-        .about-row-img-placeholder { color: #aaa; text-align:center; }
-        .about-row-img-placeholder i { font-size: 3rem; display:block; margin-bottom:0.5rem; }
-        .about-row-text h2 {
-            font-size: clamp(1.5rem, 3vw, 2rem);
-            font-weight: 800;
-            color: #2C3E50;
-            margin-bottom: 1rem;
-            line-height: 1.3;
-        }
-        .about-row-text h2 span { color: #C9A961; }
-        .about-row-text p {
-            color: #555;
-            line-height: 1.85;
-            font-size: 0.97rem;
-            margin-bottom: 0.85rem;
-        }
-
-        /* ── Stats ── */
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1.5rem;
-            margin: 3rem 0;
-        }
-        .stat-card {
-            background: linear-gradient(135deg, #2C3E50, #34495E);
-            border-radius: 16px;
-            padding: 2rem 1rem;
-            text-align: center;
-            color: white;
-        }
-        .stat-card .num { font-size: 2.2rem; font-weight: 800; color: #C9A961; }
-        .stat-card .lbl { font-size: 0.85rem; margin-top: 0.4rem; opacity: 0.85; }
-
-        /* ── Values ── */
-        .values-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1.5rem;
-        }
-        .value-card {
-            background: #f8f9fa;
-            border-radius: 16px;
-            padding: 2rem;
-            text-align: center;
-            border-bottom: 3px solid #C9A961;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .value-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.1); }
-        .value-card i { font-size: 2rem; color: #C9A961; margin-bottom: 1rem; display: block; }
-        .value-card h4 { color: #2C3E50; font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
-        .value-card p { color: #666; font-size: 0.9rem; line-height: 1.7; }
-
-        /* ── Photo placeholders row ── */
-        .photo-placeholders {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1.5rem;
-            margin-top: 2.5rem;
-        }
-        .photo-placeholders .about-row-img { aspect-ratio: 4/3; }
-
-        /* ── Team ── */
-        .team-section { background: #fff; padding: 5rem 0; }
-        .section-label {
-            text-align: center;
-            margin-bottom: 3.5rem;
-        }
-        .section-label h2 {
-            font-size: clamp(1.6rem, 3vw, 2.2rem);
-            font-weight: 800;
-            color: #2C3E50;
-            margin-bottom: 0.5rem;
-        }
-        .section-label p { color: #888; font-size: 0.97rem; }
-        .team-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 2rem;
-        }
-        .team-card {
-            text-align: center;
-            background: #f8f9fa;
-            border-radius: 20px;
-            padding: 2rem 1.5rem;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .team-card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
-        .team-photo {
-            width: 110px; height: 110px;
-            border-radius: 50%;
-            margin: 0 auto 1rem;
-            border: 4px solid #C9A961;
-            overflow: hidden;
-            background: linear-gradient(135deg, #2C3E50, #34495E);
-            display: flex; align-items: center; justify-content: center;
-        }
-        .team-photo img { width:100%; height:100%; object-fit:cover; display:block; }
-        .team-photo i { font-size: 2.5rem; color: rgba(201,169,97,0.6); }
-        .team-card .name { font-weight: 700; color: #2C3E50; font-size: 1rem; }
-        .team-card .role { color: #C9A961; font-size: 0.82rem; margin-top: 0.3rem; font-weight: 600; }
-
-        /* ── Responsive ── */
-        @media (max-width: 768px) {
-            .about-hero-inner, .about-row { grid-template-columns: 1fr; gap: 2rem; }
-            .about-row.reverse { direction: ltr; }
-            .stats-row { grid-template-columns: repeat(2, 1fr); }
-            .values-grid { grid-template-columns: repeat(2, 1fr); }
-            .photo-placeholders { grid-template-columns: 1fr; }
-            .team-grid { grid-template-columns: repeat(2, 1fr); }
-            .about-hero { padding: 6rem 0 4rem; }
-        }
-        @media (max-width: 480px) {
-            .stats-row { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-            .values-grid { grid-template-columns: 1fr; }
-            .team-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-    </style>
 </head>
 <body>
 
@@ -352,41 +160,125 @@ require_once 'config/auth.php';
 
         <div class="team-grid">
 
-            <div class="team-card">
+            <div class="team-card" onclick="showBio('vergara')">
                 <div class="team-photo">
                     <img src="uploads/team/vergara.png" alt="Christian James Vergara">
+                    <div class="team-photo-overlay"><i class="fas fa-user"></i> View</div>
                 </div>
-                <div class="name">Vergara, Christian James</div>
+                <div class="name">Vergara, Christian James N.</div>
                 <div class="role">Leader · Backend · Frontend</div>
             </div>
 
-            <div class="team-card">
+            <div class="team-card" onclick="showBio('bunag')">
                 <div class="team-photo">
                     <img src="uploads/team/Bunag.png" alt="Gabriel Evander Bunag">
+                    <div class="team-photo-overlay"><i class="fas fa-user"></i> View</div>
                 </div>
                 <div class="name">Bunag, Gabriel Evander C.</div>
                 <div class="role">Laptop Owner</div>
             </div>
 
-            <div class="team-card">
+            <div class="team-card" onclick="showBio('delima')">
                 <div class="team-photo">
                     <img src="uploads/team/Delima.png" alt="Jedric Lloyd Delima">
+                    <div class="team-photo-overlay"><i class="fas fa-user"></i> View</div>
                 </div>
                 <div class="name">Delima, Jedric Lloyd S.</div>
                 <div class="role">Backend · Admin UI/UX</div>
             </div>
 
-            <div class="team-card">
+            <div class="team-card" onclick="showBio('ramos')">
                 <div class="team-photo">
                     <img src="uploads/team/Ramos.png" alt="Jan Ramos">
+                    <div class="team-photo-overlay"><i class="fas fa-user"></i> View</div>
                 </div>
-                <div class="name">Ramos, Jan</div>
+                <div class="name">Ramos, Jan M.</div>
                 <div class="role">Frontend · UI/UX</div>
             </div>
 
         </div>
     </div>
 </section>
+
+<!-- Member Bio Modal -->
+<div id="bioOverlay" onclick="closeBio()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9998;"></div>
+<div id="bioPanel" onclick="event.stopPropagation()" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;width:360px;max-width:92vw;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,0.3);">
+    <!-- Full-width rectangular image -->
+    <div style="position:relative;width:100%;aspect-ratio:4/3;background:#2C3E50;overflow:hidden;">
+        <img id="bioImgEl" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
+        <button onclick="closeBio()" style="position:absolute;top:0.75rem;right:0.75rem;background:rgba(0,0,0,0.45);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">&times;</button>
+    </div>
+    <!-- Info -->
+    <div style="padding:1.25rem 1.5rem;">
+        <div id="bioName" style="font-weight:800;font-size:1.05rem;color:#2C3E50;"></div>
+        <div id="bioRole" style="color:#C9A961;font-size:0.82rem;font-weight:600;margin:0.2rem 0 0.85rem;"></div>
+        <p id="bioBio" style="color:#555;font-size:0.88rem;line-height:1.75;margin:0 0 0.75rem;"></p>
+        <div id="bioLinkWrap" style="display:none;">
+            <a id="bioLink" href="#"
+               onclick="event.preventDefault(); event.stopPropagation(); window.open(this.dataset.href, '_blank');"
+               style="display:inline-flex;align-items:center;gap:0.4rem;color:#C9A961;font-size:0.85rem;font-weight:700;text-decoration:none;border-bottom:1.5px solid #C9A961;padding-bottom:0.1rem;"
+               onmouseover="this.style.opacity=0.75" onmouseout="this.style.opacity=1">
+                <i class="fas fa-external-link-alt"></i>
+                <span id="bioLinkLabel"></span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+const members = {
+    vergara: {
+        name: 'Vergara, Christian James N.',
+        role: 'Leader · Backend · Frontend',
+        img:  'uploads/team/vergara.png',
+        bio:  'CJ leads the team and handles both backend logic and frontend development. He is responsible for the overall system architecture, database design, booking flow, and making sure everything works end to end.'
+    },
+    bunag: {
+        name: 'Bunag, Gabriel Evander C.',
+        role: 'Laptop Owner',
+        img:  'uploads/team/BunagLaptop.png',
+        bio:  'Gabriel is the backbone of the team in more ways than one. As the laptop owner of Acer Nitro V15 Fully Paid, he ensures the team always has the hardware needed to keep development running smoothly and on schedule.',
+        link: 'https://store.acer.com/en-ph/nitro-15-anv15-51-541p-obsidian-black-gaming',
+        linkLabel: 'View His Laptop'
+    },
+    delima: {
+        name: 'Delima, Jedric Lloyd S.',
+        role: 'Backend · Admin UI/UX',
+        img:  'uploads/team/Delima.png',
+        bio:  'Jedric handles backend development and the admin panel UI/UX. He built the admin dashboard, reservation management, and the controls that keep the resort operations running behind the scenes.'
+    },
+    ramos: {
+        name: 'Ramos, Jan M.',
+        role: 'Frontend · UI/UX',
+        img:  'uploads/team/Ramos.png',
+        bio:  'Jan is responsible for the frontend design and user experience. He crafted the visual layout, responsive styles, and the overall look and feel that guests see when they visit the site.'
+    }
+};
+
+function showBio(key) {
+    const m = members[key];
+    document.getElementById('bioImgEl').src  = m.img;
+    document.getElementById('bioImgEl').alt  = m.name;
+    document.getElementById('bioName').textContent = m.name;
+    document.getElementById('bioRole').textContent = m.role;
+    document.getElementById('bioBio').textContent  = m.bio;
+    const linkWrap = document.getElementById('bioLinkWrap');
+    if (m.link) {
+        document.getElementById('bioLink').dataset.href = m.link;
+        document.getElementById('bioLinkLabel').textContent = m.linkLabel || m.link;
+        linkWrap.style.display = '';
+    } else {
+        linkWrap.style.display = 'none';
+    }
+    document.getElementById('bioOverlay').style.display = '';
+    document.getElementById('bioPanel').style.display   = '';
+}
+
+function closeBio() {
+    document.getElementById('bioOverlay').style.display = 'none';
+    document.getElementById('bioPanel').style.display   = 'none';
+}
+</script>
 
 <!-- Footer -->
 <footer class="footer">
@@ -416,13 +308,6 @@ require_once 'config/auth.php';
 </footer>
 
 <script src="assets/js/main.js"></script>
-<script>
-    const navToggle = document.getElementById('navToggle');
-    const navMenu   = document.getElementById('navMenu');
-    if (navToggle) navToggle.addEventListener('click', () => {
-        navToggle.classList.toggle('active');
-        navMenu.classList.toggle('active');
-    });
-</script>
+<script src="assets/js/about.js"></script>
 </body>
 </html>

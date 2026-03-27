@@ -2,7 +2,6 @@
 require_once '../config/database.php';
 require_once '../config/auth.php';
 
-// Require admin login
 requireAdminLogin();
 
 // Handle AJAX status updates
@@ -47,77 +46,65 @@ $searchTerm = $_GET['search'] ?? '';
 
 try {
     $conn = getDBConnection();
-    
-    // Build query
-    $whereConditions = [];
-    $params = [];
-    $types = '';
-    
-    if (!empty($statusFilter)) {
-        $whereConditions[] = "r.status = ?";
-        $params[] = $statusFilter;
-        $types .= 's';
+
+    // Count pending room reservations
+    $pendingRooms = $conn->query("SELECT COUNT(*) as c FROM reservations WHERE status = 'pending'")->fetch_assoc()['c'];
+
+    // Count pending pavilion bookings
+    $pendingPavilion = 0;
+    $pvCheck = $conn->query("SHOW TABLES LIKE 'pavilion_bookings'");
+    if ($pvCheck && $pvCheck->num_rows > 0) {
+        $pendingPavilion = $conn->query("SELECT COUNT(*) as c FROM pavilion_bookings WHERE status = 'pending'")->fetch_assoc()['c'];
     }
-    
-    if (!empty($searchTerm)) {
-        $whereConditions[] = "(r.guest_name LIKE ? OR r.email LIKE ? OR r.phone LIKE ?)";
-        $searchParam = "%{$searchTerm}%";
-        $params[] = $searchParam;
-        $params[] = $searchParam;
-        $params[] = $searchParam;
-        $types .= 'sss';
+
+    // ── Room reservations ──
+    $roomWhere = []; $rParams = []; $rTypes = '';
+    if (!empty($statusFilter)) { $roomWhere[] = "r.status = ?"; $rParams[] = $statusFilter; $rTypes .= 's'; }
+    if (!empty($searchTerm))   { $roomWhere[] = "(r.guest_name LIKE ? OR r.email LIKE ? OR r.phone LIKE ?)"; $sp = "%{$searchTerm}%"; $rParams[] = $sp; $rParams[] = $sp; $rParams[] = $sp; $rTypes .= 'sss'; }
+    $rWhere = $roomWhere ? 'WHERE ' . implode(' AND ', $roomWhere) : '';
+
+    $rSql  = "SELECT r.*, u.username, 'room' AS booking_type FROM reservations r LEFT JOIN users u ON r.user_id = u.id {$rWhere} ORDER BY r.created_at DESC";
+    $rStmt = $conn->prepare($rSql);
+    if ($rParams) $rStmt->bind_param($rTypes, ...$rParams);
+    $rStmt->execute();
+    $roomRows = $rStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $rStmt->close();
+
+    // ── Pavilion bookings ──
+    $pvRows = [];
+    $pvCheck2 = $conn->query("SHOW TABLES LIKE 'pavilion_bookings'");
+    if ($pvCheck2 && $pvCheck2->num_rows > 0) {
+        $pvWhere = []; $pvParams = []; $pvTypes = '';
+        if (!empty($statusFilter)) { $pvWhere[] = "status = ?"; $pvParams[] = $statusFilter; $pvTypes .= 's'; }
+        if (!empty($searchTerm))   { $pvWhere[] = "(guest_name LIKE ? OR email LIKE ? OR phone LIKE ?)"; $sp = "%{$searchTerm}%"; $pvParams[] = $sp; $pvParams[] = $sp; $pvParams[] = $sp; $pvTypes .= 'sss'; }
+        $pvW   = $pvWhere ? 'WHERE ' . implode(' AND ', $pvWhere) : '';
+        $pvSql = "SELECT *, 'pavilion' AS booking_type FROM pavilion_bookings {$pvW} ORDER BY created_at DESC";
+        $pvStmt = $conn->prepare($pvSql);
+        if ($pvParams) $pvStmt->bind_param($pvTypes, ...$pvParams);
+        $pvStmt->execute();
+        $pvRows = $pvStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $pvStmt->close();
     }
-    
-    $whereClause = !empty($whereConditions) ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
-    
-    // Get total count
-    $countSql = "SELECT COUNT(*) as total FROM reservations r {$whereClause}";
-    $countStmt = $conn->prepare($countSql);
-    if (!empty($params)) {
-        $countStmt->bind_param($types, ...$params);
-    }
-    $countStmt->execute();
-    $totalResult = $countStmt->get_result();
-    $totalReservations = $totalResult->fetch_assoc()['total'];
-    $countStmt->close();
-    
-    // Get reservations
-    $sql = "SELECT r.*, u.username FROM reservations r 
-            LEFT JOIN users u ON r.user_id = u.id 
-            {$whereClause} 
-            ORDER BY r.created_at DESC 
-            LIMIT ? OFFSET ?";
-    
-    $stmt = $conn->prepare($sql);
-    $params[] = $limit;
-    $params[] = $offset;
-    $types .= 'ii';
-    
-    if (!empty($params)) {
-        $stmt->bind_param($types, ...$params);
-    }
-    
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $reservations = [];
-    
-    while ($row = $result->fetch_assoc()) {
-        $reservations[] = $row;
-    }
-    
-    $stmt->close();
+
+    // ── Merge and sort by created_at DESC ──
+    $allRows = array_merge($roomRows, $pvRows);
+    usort($allRows, fn($a,$b) => strcmp($b['created_at'], $a['created_at']));
+
+    $totalReservations = count($allRows);
+    $totalPages        = ceil($totalReservations / $limit);
+    $reservations      = array_slice($allRows, $offset, $limit);
+
     $conn->close();
-    
-    $totalPages = ceil($totalReservations / $limit);
     
 } catch (Exception $e) {
     error_log("Reservations page error: " . $e->getMessage());
     $reservations = [];
     $totalReservations = 0;
     $totalPages = 0;
+    $pendingRooms = 0;
+    $pendingPavilion = 0;
 }
 
-// Set page variables for template
 $pageTitle = 'Reservations';
 $currentPage = 'reservations';
 ?>
@@ -197,6 +184,30 @@ $currentPage = 'reservations';
         <p>Manage hotel reservations and bookings</p>
     </div>
 
+    <!-- Pending Notifications -->
+    <?php if ($pendingRooms > 0 || $pendingPavilion > 0): ?>
+    <div class="pending-alerts">
+        <?php if ($pendingRooms > 0): ?>
+        <div class="pending-alert pending-alert-room">
+            <div class="pending-alert-icon"><i class="fas fa-bed"></i></div>
+            <div class="pending-alert-body">
+                <strong><?php echo $pendingRooms; ?> Pending Room Reservation<?php echo $pendingRooms > 1 ? 's' : ''; ?></strong>
+                <span>Waiting for your confirmation</span>
+            </div>
+        </div>
+        <?php endif; ?>
+        <?php if ($pendingPavilion > 0): ?>
+        <div class="pending-alert pending-alert-pavilion">
+            <div class="pending-alert-icon"><i class="fas fa-archway"></i></div>
+            <div class="pending-alert-body">
+                <strong><?php echo $pendingPavilion; ?> Pending Pavilion Booking<?php echo $pendingPavilion > 1 ? 's' : ''; ?></strong>
+                <span>Waiting for your confirmation</span>
+            </div>
+        </div>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
             <!-- Filters -->
             <div class="filters">
                 <form method="GET" action="" style="display: contents;">
@@ -209,7 +220,9 @@ $currentPage = 'reservations';
                         <label for="status">Status</label>
                         <select id="status" name="status">
                             <option value="">All Statuses</option>
-                            <option value="pending" <?php echo $statusFilter === 'pending' ? 'selected' : ''; ?>>Pending</option>
+                        <option value="pending" <?php echo $statusFilter === 'pending' ? 'selected' : ''; ?>>
+                            Pending <?php $totalPending = $pendingRooms + $pendingPavilion; if ($totalPending > 0) echo "($totalPending)"; ?>
+                        </option>
                             <option value="confirmed" <?php echo $statusFilter === 'confirmed' ? 'selected' : ''; ?>>Confirmed</option>
                             <option value="cancelled" <?php echo $statusFilter === 'cancelled' ? 'selected' : ''; ?>>Cancelled</option>
                         </select>
@@ -246,53 +259,63 @@ $currentPage = 'reservations';
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($reservations as $reservation): ?>
+                            <?php foreach ($reservations as $reservation):
+                                $isPav = ($reservation['booking_type'] ?? '') === 'pavilion';
+                                $actId = ($isPav ? 'pv' : 'rm') . $reservation['id'];
+                            ?>
                             <tr>
-                                <td><strong>#<?php echo $reservation['id']; ?></strong></td>
+                                <td>
+                                    <strong>#<?php echo $reservation['id']; ?></strong>
+                                    <?php if ($isPav): ?>
+                                    <div style="font-size:0.7rem;background:#e8f4ff;color:#3b82f6;border-radius:4px;padding:0.1rem 0.35rem;margin-top:0.2rem;display:inline-block;font-weight:700;">PAVILION</div>
+                                    <?php else: ?>
+                                    <div style="font-size:0.7rem;background:#fff3cd;color:#856404;border-radius:4px;padding:0.1rem 0.35rem;margin-top:0.2rem;display:inline-block;font-weight:700;">ROOM</div>
+                                    <?php endif; ?>
+                                </td>
                                 <td>
                                     <strong><?php echo htmlspecialchars($reservation['guest_name']); ?></strong>
                                     <div class="reservation-details">
                                         <div><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($reservation['email']); ?></div>
                                         <div><i class="fas fa-phone"></i> <?php echo htmlspecialchars($reservation['phone']); ?></div>
-                                        <div><i class="fas fa-users"></i> <?php echo $reservation['guests']; ?> guests</div>
+                                        <div><i class="fas fa-users"></i> <?php echo $isPav ? ($reservation['pax'] ?? 0) : $reservation['guests']; ?> guests</div>
                                     </div>
                                 </td>
                                 <td>
-                                    <?php
-                                        $rOpts   = json_decode($reservation['options'] ?? '{}', true);
-                                        $rNum    = $rOpts['individual_room']['room_number'] ?? '';
-                                        $rType   = $rOpts['individual_room']['room_type']   ?? $reservation['room_type'] ?? '';
+                                    <?php if ($isPav): ?>
+                                        <strong><i class="fas fa-archway" style="color:#C9A961;margin-right:0.3rem;"></i><?php echo htmlspecialchars($reservation['event_type'] ?? 'Event'); ?></strong>
+                                        <div class="reservation-details">
+                                            <div><i class="fas fa-calendar"></i> <?php echo date('M j, Y', strtotime($reservation['event_date'])); ?></div>
+                                            <?php if (!empty($reservation['event_time'])): ?>
+                                            <div><i class="fas fa-clock"></i> <?php echo htmlspecialchars($reservation['event_time']); ?><?php echo !empty($reservation['event_end_time']) ? ' - ' . htmlspecialchars($reservation['event_end_time']) : ''; ?></div>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php else:
+                                        $rOpts  = json_decode($reservation['options'] ?? '{}', true);
+                                        $rNum   = $rOpts['individual_room']['room_number'] ?? '';
+                                        $rType  = $rOpts['individual_room']['room_type']   ?? $reservation['room_type'] ?? '';
                                         if (strpos($rType, ' - ') !== false) $rType = explode(' - ', $rType)[0];
-                                        if ($rNum && $rType) {
-                                            echo '<strong>' . htmlspecialchars($rType) . ' Room ' . htmlspecialchars($rNum) . '</strong>';
-                                        } elseif ($rNum) {
-                                            echo '<strong>Room ' . htmlspecialchars($rNum) . '</strong>';
-                                        } else {
-                                            echo '<strong>' . htmlspecialchars($rType ?: 'N/A') . '</strong>';
-                                        }
+                                        $label  = $rType ? $rType . ($rNum ? ' Room ' . $rNum : '') : 'N/A';
                                     ?>
-                                    <div class="reservation-details">
-                                        <div><i class="fas fa-calendar"></i> <?php echo date('M j', strtotime($reservation['checkin_date'])); ?> - <?php echo date('M j, Y', strtotime($reservation['checkout_date'])); ?></div>
-                                        <?php
-                                        $checkin = new DateTime($reservation['checkin_date']);
-                                        $checkout = new DateTime($reservation['checkout_date']);
-                                        $nights = $checkin->diff($checkout)->days;
-                                        ?>
-                                        <div><i class="fas fa-moon"></i> <?php echo $nights; ?> night<?php echo $nights > 1 ? 's' : ''; ?></div>
-                                    </div>
+                                        <strong><?php echo htmlspecialchars($label); ?></strong>
+                                        <div class="reservation-details">
+                                            <div><i class="fas fa-calendar"></i> <?php echo date('M j', strtotime($reservation['checkin_date'])); ?> - <?php echo date('M j, Y', strtotime($reservation['checkout_date'])); ?></div>
+                                            <?php $nights = (new DateTime($reservation['checkin_date']))->diff(new DateTime($reservation['checkout_date']))->days; ?>
+                                            <div><i class="fas fa-moon"></i> <?php echo $nights; ?> night<?php echo $nights > 1 ? 's' : ''; ?></div>
+                                        </div>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <div class="payment-info">
                                         <div class="payment-amount">₱<?php echo number_format($reservation['price'], 2); ?></div>
-                                        <?php if ($reservation['payment_amount'] > 0): ?>
-                                        <div>Paid: ₱<?php echo number_format($reservation['payment_amount'], 2); ?> (<?php echo $reservation['payment_percentage']; ?>%)</div>
+                                        <?php if (($reservation['payment_amount'] ?? 0) > 0): ?>
+                                        <div>Paid: ₱<?php echo number_format($reservation['payment_amount'], 2); ?> (<?php echo $reservation['payment_percentage'] ?? 0; ?>%)</div>
                                         <?php endif; ?>
                                         <?php if (!empty($reservation['payment_method'])): ?>
                                         <div class="payment-method"><?php echo str_replace('_', ' ', $reservation['payment_method']); ?></div>
                                         <?php endif; ?>
                                         <div>
-                                            <span class="status-badge status-<?php echo $reservation['payment_status']; ?>">
-                                                <?php echo ucfirst($reservation['payment_status']); ?>
+                                            <span class="status-badge status-<?php echo $reservation['payment_status'] ?? 'pending'; ?>">
+                                                <?php echo ucfirst($reservation['payment_status'] ?? 'pending'); ?>
                                             </span>
                                         </div>
                                     </div>
@@ -303,19 +326,34 @@ $currentPage = 'reservations';
                                     </span>
                                 </td>
                                 <td><?php echo date('M j, Y', strtotime($reservation['created_at'])); ?></td>
-                                <td id="actions-<?php echo $reservation['id']; ?>">
-                                    <?php if ($reservation['status'] === 'pending'): ?>
-                                    <div class="reservation-actions">
-                                        <button class="btn-action btn-confirm" onclick="updateReservation(<?php echo $reservation['id']; ?>,'confirm')">
-                                            <i class="fas fa-check"></i> Confirm
-                                        </button>
-                                        <button class="btn-action btn-cancel" onclick="updateReservation(<?php echo $reservation['id']; ?>,'cancel')">
-                                            <i class="fas fa-times"></i> Cancel
-                                        </button>
-                                    </div>
-                                    <?php else: ?>
-                                    <span style="color: #666; font-style: italic;">No actions</span>
-                                    <?php endif; ?>
+                                <td>
+                                    <?php
+                                    $proofFile = null;
+                                    $proofDir  = '../payment/uploads/payment_proofs/';
+                                    if (is_dir($proofDir)) {
+                                        $method = $reservation['payment_method'] ?? '';
+                                        $rid    = $reservation['id'];
+                                        foreach (glob($proofDir . $method . '_' . $rid . '_*') as $f) { $proofFile = basename($f); break; }
+                                    }
+                                    $isPending  = $reservation['status'] === 'pending';
+                                    $hasPayment = !empty($reservation['payment_method']) || $proofFile;
+                                    $panelData  = json_encode([
+                                        'actId'   => $actId,
+                                        'id'      => $reservation['id'],
+                                        'isPav'   => $isPav,
+                                        'pending' => $isPending,
+                                        'method'  => ucwords(str_replace('_', ' ', $reservation['payment_method'] ?? '')),
+                                        'ref'     => $reservation['payment_reference'] ?? '',
+                                        'proof'   => $proofFile ? '../payment/uploads/payment_proofs/' . $proofFile : '',
+                                        'hasPayment' => $hasPayment,
+                                        'guest'   => $reservation['guest_name'],
+                                        'ctrlNum' => $isPav ? 'PAV-' . str_pad($reservation['id'], 6, '0', STR_PAD_LEFT) : 'RES-' . str_pad($reservation['id'], 6, '0', STR_PAD_LEFT),
+                                        'status'  => $reservation['status'],
+                                    ]);
+                                    ?>
+                                    <button class="btn-ctrl" onclick='openCtrl(<?php echo htmlspecialchars($panelData, ENT_QUOTES); ?>)'>
+                                        <i class="fas fa-ellipsis-v"></i> Actions
+                                    </button>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -365,30 +403,220 @@ $currentPage = 'reservations';
                 <?php endif; ?>
             </div>
 <?php include 'template_footer.php'; ?>
+
+<!-- Floating Control Panel -->
+<div id="ctrlOverlay" onclick="closeCtrl()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9998;"></div>
+<div id="ctrlPanel" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;width:340px;background:#fff;border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,0.35);overflow:hidden;">
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#2C3E50,#34495E);padding:1.1rem 1.4rem;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+            <div style="color:#C9A961;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;">Reservation Controls</div>
+            <div id="ctrlGuest" style="color:#fff;font-weight:700;font-size:1rem;margin-top:0.15rem;"></div>
+            <div id="ctrlNum" style="color:rgba(255,255,255,0.55);font-size:0.75rem;margin-top:0.1rem;font-family:monospace;"></div>
+        </div>
+        <button onclick="closeCtrl()" style="background:rgba(255,255,255,0.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">&times;</button>
+    </div>
+
+    <!-- Actions -->
+    <div style="padding:1.25rem;display:flex;flex-direction:column;gap:0.75rem;">
+
+        <!-- Confirm / Cancel -->
+        <div id="ctrlPendingSection">
+            <div style="font-size:0.72rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.5rem;">Booking Status</div>
+            <div style="display:flex;gap:0.6rem;">
+                <button id="ctrlConfirmBtn" onclick="ctrlAction('confirm')"
+                    style="flex:1;padding:0.65rem;border:none;border-radius:10px;background:#28a745;color:#fff;font-weight:700;font-size:0.88rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.4rem;transition:opacity 0.2s;">
+                    <i class="fas fa-check"></i> Confirm
+                </button>
+                <button id="ctrlCancelBtn" onclick="ctrlAction('cancel')"
+                    style="flex:1;padding:0.65rem;border:none;border-radius:10px;background:#dc3545;color:#fff;font-weight:700;font-size:0.88rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.4rem;transition:opacity 0.2s;">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+        </div>
+
+        <!-- Cancel only (for confirmed bookings) -->
+        <div id="ctrlCancelOnly" style="display:none;">
+            <button onclick="ctrlAction('cancel')"
+                style="width:100%;padding:0.65rem;border:none;border-radius:10px;background:#dc3545;color:#fff;font-weight:700;font-size:0.88rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.4rem;">
+                <i class="fas fa-times"></i> Cancel Booking
+            </button>
+        </div>
+
+        <!-- Payment info -->
+        <div id="ctrlPaymentSection">
+            <div style="font-size:0.72rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.75rem;">Payment Details</div>
+            <div style="background:#f8f9fa;border-radius:8px;padding:0.75rem;margin-bottom:0.6rem;">
+                <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:0.2rem;">Method</div>
+                <div id="ctrlPayMethod" style="font-size:0.92rem;font-weight:700;color:#2C3E50;"></div>
+            </div>
+            <div style="background:#f8f9fa;border-radius:8px;padding:0.75rem;margin-bottom:0.75rem;">
+                <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:0.2rem;">Transaction ID / Reference</div>
+                <div id="ctrlPayRef" style="font-size:0.88rem;font-weight:600;color:#2C3E50;word-break:break-all;font-family:monospace;"></div>
+            </div>
+            <div id="ctrlProofWrap">
+                <a id="ctrlProofLink" href="#" target="_blank">
+                    <img id="ctrlProofImg" src="" alt="Proof"
+                         style="width:100%;border-radius:10px;border:2px solid #e0e0e0;cursor:pointer;display:block;">
+                </a>
+                <p style="font-size:0.75rem;color:#aaa;text-align:center;margin-top:0.4rem;">Click to open full size</p>
+            </div>
+            <div id="ctrlNoProof" style="color:#bbb;font-style:italic;font-size:0.82rem;text-align:center;padding:0.5rem 0;">No proof uploaded yet.</div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+.btn-ctrl {
+    background: linear-gradient(135deg,#2C3E50,#34495E);
+    color: white; border: none; padding: 0.4rem 0.9rem;
+    border-radius: 8px; font-size: 0.78rem; font-weight: 600;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem;
+    transition: all 0.2s;
+}
+.btn-ctrl:hover { background: linear-gradient(135deg,#C9A961,#8B7355); }
+
+/* Pending alerts */
+.pending-alerts { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; }
+.pending-alert { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 1rem; border-radius: 8px; border-left: 4px solid; }
+.pending-alert-room     { background: #fff8e8; border-color: #C9A961; }
+.pending-alert-pavilion { background: #e8f4ff; border-color: #3b82f6; }
+.pending-alert-icon { font-size: 1rem; flex-shrink: 0; }
+.pending-alert-room     .pending-alert-icon { color: #C9A961; }
+.pending-alert-pavilion .pending-alert-icon { color: #3b82f6; }
+.pending-alert-body { flex: 1; display: flex; align-items: center; gap: 0.5rem; }
+.pending-alert-body strong { color: #2C3E50; font-size: 0.88rem; }
+.pending-alert-body span  { color: #888; font-size: 0.8rem; }
+</style>
+
 <script>
-function updateReservation(id, action) {
-    const label = action === 'confirm' ? 'Confirm this reservation?' : 'Cancel this reservation?';
+let _ctrl = {};
+
+function openCtrl(data) {
+    _ctrl = data;
+    document.getElementById('ctrlGuest').textContent = data.guest;
+    document.getElementById('ctrlNum').textContent   = data.ctrlNum || '';
+
+    // Show correct action buttons based on status
+    const pendSec      = document.getElementById('ctrlPendingSection');
+    const cancelOnly   = document.getElementById('ctrlCancelOnly');
+    const isCancelled  = data.status === 'cancelled';
+
+    pendSec.style.display    = data.pending    ? '' : 'none';
+    cancelOnly.style.display = (!data.pending && !isCancelled) ? '' : 'none';
+
+    // Payment section
+    const paySec = document.getElementById('ctrlPaymentSection');
+    paySec.style.display = data.hasPayment ? '' : 'none';
+    if (data.hasPayment) {
+        document.getElementById('ctrlPayMethod').textContent = data.method || 'Not specified';
+        document.getElementById('ctrlPayRef').textContent    = data.ref   || 'No reference';
+        if (data.proof) {
+            document.getElementById('ctrlProofImg').src   = data.proof;
+            document.getElementById('ctrlProofLink').href = data.proof;
+            document.getElementById('ctrlProofWrap').style.display = '';
+            document.getElementById('ctrlNoProof').style.display   = 'none';
+        } else {
+            document.getElementById('ctrlProofWrap').style.display = 'none';
+            document.getElementById('ctrlNoProof').style.display   = '';
+        }
+    }
+
+    document.getElementById('ctrlOverlay').style.display = '';
+    document.getElementById('ctrlPanel').style.display   = '';
+}
+
+function closeCtrl() {
+    document.getElementById('ctrlOverlay').style.display = 'none';
+    document.getElementById('ctrlPanel').style.display   = 'none';
+}
+
+function ctrlAction(action) {
+    const label = action === 'confirm' ? 'Confirm this booking?' : 'Cancel this booking?';
     if (!confirm(label)) return;
 
-    const fd = new FormData();
-    fd.append('reservation_id', id);
-    fd.append('action', action);
+    const confirmBtn = document.getElementById('ctrlConfirmBtn');
+    const cancelBtn  = document.getElementById('ctrlCancelBtn');
+    confirmBtn.disabled = cancelBtn.disabled = true;
+    confirmBtn.style.opacity = cancelBtn.style.opacity = '0.5';
 
-    fetch('reservations.php', {
-        method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-        body: fd
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (!data.success) { alert('Error: ' + (data.message || 'Unknown error')); return; }
-        const statusCell = document.querySelector(`#actions-${id}`).closest('tr').querySelector('.status-badge');
-        const actionsCell = document.getElementById('actions-' + id);
-        const newStatus = data.new_status;
-        statusCell.className = 'status-badge status-' + newStatus;
-        statusCell.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
-        actionsCell.innerHTML = '<span style="color:#666;font-style:italic;">No actions</span>';
-    })
-    .catch(() => alert('Request failed. Please try again.'));
+    const fd = new FormData();
+    fd.append('action', _ctrl.isPav ? (action === 'confirm' ? 'confirm_booking' : 'cancel_booking') : action);
+    if (_ctrl.isPav) fd.append('id', _ctrl.id);
+    else { fd.append('reservation_id', _ctrl.id); }
+
+    const url = _ctrl.isPav ? 'pavilion_dashboard.php' : 'reservations.php';
+
+    fetch(url, { method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}, body:fd })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) { alert('Error: ' + (data.message || 'Unknown')); confirmBtn.disabled = cancelBtn.disabled = false; confirmBtn.style.opacity = cancelBtn.style.opacity = '1'; return; }
+            const newStatus = action === 'confirm' ? 'confirmed' : 'cancelled';
+            applyStatusUpdate(_ctrl.actId, newStatus);
+            // Hide pending section in panel
+            document.getElementById('ctrlPendingSection').style.display = 'none';
+            document.getElementById('ctrlCancelOnly').style.display     = 'none';
+            closeCtrl();
+        })
+        .catch(() => { alert('Request failed.'); confirmBtn.disabled = cancelBtn.disabled = false; confirmBtn.style.opacity = cancelBtn.style.opacity = '1'; });
+}
+
+function applyStatusUpdate(actId, newStatus) {
+    // Update all status badges in the row
+    const btn = document.querySelector(`[onclick*="${actId}"]`);
+    if (btn) {
+        const row = btn.closest('tr');
+        if (row) {
+            row.querySelectorAll('.status-badge').forEach(b => {
+                b.className = 'status-badge status-' + newStatus;
+                b.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+            });
+        }
+    }
+
+    // Update pending alert counts
+    const isPav = actId.startsWith('pv');
+    const alertClass = isPav ? '.pending-alert-pavilion' : '.pending-alert-room';
+    const alertEl = document.querySelector(alertClass);
+    if (alertEl) {
+        const strong = alertEl.querySelector('strong');
+        if (strong) {
+            const match = strong.textContent.match(/(\d+)/);
+            if (match) {
+                const newCount = parseInt(match[1]) - 1;
+                if (newCount <= 0) {
+                    alertEl.remove();
+                    const wrapper = document.querySelector('.pending-alerts');
+                    if (wrapper && wrapper.children.length === 0) wrapper.remove();
+                } else {
+                    const label = isPav ? 'Pending Pavilion Booking' : 'Pending Room Reservation';
+                    strong.textContent = newCount + ' ' + label + (newCount > 1 ? 's' : '');
+                }
+            }
+        }
+    }
+
+    // Update filter dropdown count
+    const pendingOpt = document.querySelector('select[name="status"] option[value="pending"]');
+    if (pendingOpt) {
+        const match = pendingOpt.textContent.match(/(\d+)/);
+        if (match) {
+            const newTotal = parseInt(match[1]) - 1;
+            pendingOpt.textContent = newTotal > 0 ? 'Pending (' + newTotal + ')' : 'Pending';
+        }
+    }
+
+    // Mark ctrl data as no longer pending
+    _ctrl.pending = false;
+}
+
+function updateReservation(id, action, actId) {
+    _ctrl = { id, isPav: false, actId };
+    ctrlAction(action);
+}
+function updatePavilion(id, action, actId) {
+    _ctrl = { id, isPav: true, actId };
+    ctrlAction(action === 'confirm_booking' ? 'confirm' : 'cancel');
 }
 </script>
